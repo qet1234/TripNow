@@ -11,13 +11,15 @@ if (!supabaseUrl || !supabasePublishableKey) {
   );
 }
 
+// TripNow 1차 버전은 회원가입/로그인을 사용하지 않습니다.
+// Supabase는 운영정보, 공식 규정, API 캐시 및 Edge Functions 용도로만 사용합니다.
 export const supabase = createClient(
   supabaseUrl,
   supabasePublishableKey,
   {
     auth: {
-      persistSession: true,
-      autoRefreshToken: true,
+      persistSession: false,
+      autoRefreshToken: false,
       detectSessionInUrl: false,
     },
   },
