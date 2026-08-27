@@ -22,7 +22,9 @@
     "android": {
       "package": "com.qet1234.tripnow",
       "permissions": [
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "android.permission.POST_PROMOTED_NOTIFICATIONS"
       ]
     },
     "web": {
