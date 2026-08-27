@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Linking,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -123,6 +124,28 @@ export function WeatherCard({ region }: Props) {
         </View>
       </View>
 
+      <Text style={styles.hourlyTitle}>시간대별 예보</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.hourlyRow}
+      >
+        {weather.hourly.map((item) => (
+          <View key={item.time} style={styles.hourBox}>
+            <Text style={styles.hourTime}>{formatTime(item.time)}</Text>
+            <Text style={styles.hourIcon}>{item.condition.icon}</Text>
+            <Text style={styles.hourTemp}>
+              {Math.round(item.temperatureC)}°
+            </Text>
+            <Text style={styles.hourRain}>
+              {item.precipitationMm > 0
+                ? item.precipitationMm.toFixed(1) + "mm"
+                : "-"}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
+
       <View style={styles.footer}>
         <Text style={styles.updated}>
           기준 {formatTime(weather.current.time)} · 10분 캐시
@@ -229,6 +252,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     marginTop: 4,
+  },
+  hourlyTitle: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "800",
+    marginTop: 18,
+  },
+  hourlyRow: {
+    gap: 8,
+    paddingTop: 10,
+    paddingBottom: 2,
+  },
+  hourBox: {
+    width: 62,
+    alignItems: "center",
+    backgroundColor: colors.background,
+    borderRadius: radius.sm,
+    paddingVertical: 9,
+  },
+  hourTime: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  hourIcon: {
+    fontSize: 19,
+    marginTop: 5,
+  },
+  hourTemp: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "800",
+    marginTop: 4,
+  },
+  hourRain: {
+    color: colors.primary,
+    fontSize: 9,
+    marginTop: 3,
   },
   footer: {
     marginTop: 14,
