@@ -23,8 +23,8 @@ export type PlacePreview = {
   id: string;
   name: string;
   category: PlaceCategory;
-  distanceMeters: number;
-  walkingMinutes: number;
+  areaLabel: string;
   openNow?: boolean;
   hoursLabel?: string;
+  mapQuery: string;
 };
