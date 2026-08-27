@@ -1,12 +1,11 @@
 # TripNow Expo / EAS 연결
 
-TripNow는 기존 앱과 분리된 신규 Expo/EAS 프로젝트를 사용합니다.
+TripNow는 기존 앱과 분리된 신규 Expo/EAS 프로젝트를 사용하며 Samsung Galaxy용 Android 앱만 빌드합니다.
 
 ## 앱 식별자
 
 - Expo slug: `tripnow`
 - Android package: `com.qet1234.tripnow`
-- iOS bundleIdentifier: `com.qet1234.tripnow`
 - Deep link scheme: `tripnow://`
 
 ## 신규 Expo 프로젝트 연결
@@ -39,15 +38,17 @@ npx eas-cli init
 
 이 projectId는 KO-PICK의 EAS projectId를 재사용하면 안 됩니다.
 
-## 빌드
+## Android 빌드
 
 ```bash
 npx eas-cli build --platform android --profile development
 npx eas-cli build --platform android --profile preview
 npx eas-cli build --platform android --profile production
-npx eas-cli build --platform ios --profile development
-npx eas-cli build --platform ios --profile production
 ```
+
+Galaxy 실시간 지하철 기능은 로컬 Android Expo module을 사용하므로 Expo Go가 아닌 development/release 빌드가 필요합니다.
+
+GitHub Actions는 자동 실행되지 않으며, 2026년 9월 1일까지 수동 실행도 하지 않습니다.
 
 ## 환경변수
 

@@ -1,15 +1,23 @@
 import TripNowLiveTransitNative, {
   type TransitLiveUpdatePayload,
   type TransitLiveUpdateSupport,
+  type TransitNotificationDisplayMode,
 } from "./src/TripNowLiveTransitModule";
 
-export type { TransitLiveUpdatePayload, TransitLiveUpdateSupport };
+export type {
+  TransitLiveUpdatePayload,
+  TransitLiveUpdateSupport,
+  TransitNotificationDisplayMode,
+};
 
 const unsupported: TransitLiveUpdateSupport = {
   android: false,
+  galaxy: false,
+  manufacturer: "unknown",
   androidVersion: 0,
   notificationsEnabled: false,
   liveUpdateEligible: false,
+  displayMode: "unsupported",
 };
 
 export function getTransitLiveUpdateSupport() {

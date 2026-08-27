@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   getTransitLiveUpdateSupport,
   requestTransitNotificationPermission,
@@ -46,15 +40,21 @@ export function GalaxyTransitLiveCard() {
   const [active, setActive] = useState(false);
   const [step, setStep] = useState(0);
   const [message, setMessage] = useState(
-    "Android 16 지원 갤럭시에서는 Live Update 승격을 요청하고, 미지원 기기에서는 일반 진행형 알림으로 표시합니다.",
+    "지원 갤럭시는 Live Update를 사용하고, 미지원 갤럭시는 일반 진행형 알림으로 자동 전환합니다.",
   );
-
-  if (Platform.OS !== "android") {
-    return null;
-  }
 
   const start = () => {
     const support = getTransitLiveUpdateSupport();
+
+    if (!support.android) {
+      setMessage("네이티브 모듈이 포함된 Android 빌드에서 사용할 수 있습니다.");
+      return;
+    }
+
+    if (!support.galaxy) {
+      setMessage("이 기능은 Samsung Galaxy 기기에서만 사용할 수 있습니다.");
+      return;
+    }
 
     if (!support.notificationsEnabled) {
       requestTransitNotificationPermission();
@@ -79,9 +79,9 @@ export function GalaxyTransitLiveCard() {
     setStep(0);
     setActive(true);
     setMessage(
-      support.liveUpdateEligible
-        ? "Live Update 승격 조건을 충족했습니다. 실제 표시 위치는 Galaxy/One UI 정책에 따라 결정됩니다."
-        : "이 기기에서는 일반 진행형 지속 알림으로 표시됩니다.",
+      support.displayMode === "live_update"
+        ? "Live Update로 시작했습니다. Now Bar 등 실제 표시 위치는 Galaxy/One UI 정책에 따라 결정됩니다."
+        : "이 갤럭시에서는 일반 진행형 지속 알림으로 자동 전환했습니다.",
     );
   };
 
@@ -119,7 +119,7 @@ export function GalaxyTransitLiveCard() {
           <Text style={styles.icon}>🚇</Text>
         </View>
         <View style={styles.headerBody}>
-          <Text style={styles.eyebrow}>GALAXY · ANDROID</Text>
+          <Text style={styles.eyebrow}>GALAXY ONLY</Text>
           <Text style={styles.title}>지하철 실시간 안내</Text>
         </View>
         <View style={styles.badge}>

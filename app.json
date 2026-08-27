@@ -3,6 +3,7 @@
     "name": "TripNow",
     "slug": "tripnow",
     "version": "0.1.0",
+    "platforms": ["android"],
     "orientation": "portrait",
     "scheme": "tripnow",
     "userInterfaceStyle": "automatic",
@@ -15,10 +16,6 @@
         }
       ]
     ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.qet1234.tripnow"
-    },
     "android": {
       "package": "com.qet1234.tripnow",
       "permissions": [
@@ -26,9 +23,6 @@
         "POST_NOTIFICATIONS",
         "android.permission.POST_PROMOTED_NOTIFICATIONS"
       ]
-    },
-    "web": {
-      "bundler": "metro"
     }
   }
 }

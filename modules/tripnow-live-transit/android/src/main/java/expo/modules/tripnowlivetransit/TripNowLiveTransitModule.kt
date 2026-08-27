@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.os.BuildCompat
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
@@ -25,19 +26,27 @@ class TripNowLiveTransitModule : Module() {
     Function("getSupportInfo") {
       val context = requireContext()
       val manager = NotificationManagerCompat.from(context)
+      val galaxy = isGalaxyDevice()
+      val liveUpdateEligible = galaxy && canUseLiveUpdate(manager)
 
       mapOf(
         "android" to true,
+        "galaxy" to galaxy,
+        "manufacturer" to Build.MANUFACTURER,
         "androidVersion" to Build.VERSION.SDK_INT,
         "notificationsEnabled" to manager.areNotificationsEnabled(),
-        "liveUpdateEligible" to (
-          Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA &&
-            manager.canPostPromotedNotifications()
-          )
+        "liveUpdateEligible" to liveUpdateEligible,
+        "displayMode" to when {
+          !galaxy -> "unsupported"
+          liveUpdateEligible -> "live_update"
+          else -> "progress"
+        },
       )
     }
 
     Function("requestNotificationPermission") {
+      if (!isGalaxyDevice()) return@Function false
+
       val context = requireContext()
 
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
@@ -113,6 +122,14 @@ class TripNowLiveTransitModule : Module() {
     }
   }
 
+  private fun isGalaxyDevice(): Boolean {
+    return "samsung".equals(Build.MANUFACTURER, ignoreCase = true)
+  }
+
+  private fun canUseLiveUpdate(manager: NotificationManagerCompat): Boolean {
+    return BuildCompat.isAtLeastB() && manager.canPostPromotedNotifications()
+  }
+
   private fun ensureChannel(context: Context) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
 
@@ -153,6 +170,8 @@ class TripNowLiveTransitModule : Module() {
     progress: Int,
     statusText: String,
   ): Boolean {
+    if (!isGalaxyDevice()) return false
+
     val context = requireContext()
     val manager = NotificationManagerCompat.from(context)
 
@@ -162,11 +181,7 @@ class TripNowLiveTransitModule : Module() {
 
     val safeProgress = progress.coerceIn(0, 100)
     val safeRemainingStops = remainingStops.coerceAtLeast(0)
-
-    val style = NotificationCompat.ProgressStyle()
-      .setStyledByProgress(true)
-      .setProgress(safeProgress)
-      .addProgressSegment(NotificationCompat.ProgressStyle.Segment(100))
+    val liveUpdateEligible = canUseLiveUpdate(manager)
 
     val contentText = buildString {
       append(statusText)
@@ -187,10 +202,26 @@ class TripNowLiveTransitModule : Module() {
       .setCategory(NotificationCompat.CATEGORY_NAVIGATION)
       .setOngoing(true)
       .setOnlyAlertOnce(true)
-      .setShowWhen(true)
-      .setRequestPromotedOngoing(true)
-      .setStyle(style)
+      .setShowWhen(false)
       .setPriority(NotificationCompat.PRIORITY_HIGH)
+
+    if (liveUpdateEligible) {
+      val liveStyle = NotificationCompat.ProgressStyle()
+        .setStyledByProgress(true)
+        .setProgress(safeProgress)
+        .addProgressSegment(NotificationCompat.ProgressStyle.Segment(100))
+
+      builder
+        .setRequestPromotedOngoing(true)
+        .setStyle(liveStyle)
+        .setShortCriticalText(
+          if (safeRemainingStops == 0) "도착" else "${safeRemainingStops}역",
+        )
+    } else {
+      builder
+        .setRequestPromotedOngoing(false)
+        .setProgress(100, safeProgress, false)
+    }
 
     launchIntent(context)?.let(builder::setContentIntent)
 
@@ -203,6 +234,8 @@ class TripNowLiveTransitModule : Module() {
   }
 
   private fun postCompletionNotification(finalMessage: String): Boolean {
+    if (!isGalaxyDevice()) return false
+
     val context = requireContext()
     val manager = NotificationManagerCompat.from(context)
 

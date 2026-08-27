@@ -11,11 +11,19 @@ export type TransitLiveUpdatePayload = {
   statusText?: string;
 };
 
+export type TransitNotificationDisplayMode =
+  | "live_update"
+  | "progress"
+  | "unsupported";
+
 export type TransitLiveUpdateSupport = {
   android: boolean;
+  galaxy: boolean;
+  manufacturer: string;
   androidVersion: number;
   notificationsEnabled: boolean;
   liveUpdateEligible: boolean;
+  displayMode: TransitNotificationDisplayMode;
 };
 
 export type TripNowLiveTransitNativeModule = {

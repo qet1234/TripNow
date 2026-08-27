@@ -1,6 +1,6 @@
 # TripNow
 
-해외여행 중 **지금 필요한 행동**을 빠르게 실행할 수 있도록 돕는 로그인 없는 모바일 앱입니다.
+해외여행 중 **지금 필요한 행동**을 빠르게 실행할 수 있도록 돕는 로그인 없는 Galaxy 전용 모바일 앱입니다.
 
 ## 1차 출시
 
@@ -73,6 +73,7 @@ Supabase:
 - Expo SDK 57
 - React Native / TypeScript
 - Expo Router
+- Android-only local Expo module
 - Supabase
 - Google Maps / Places
 - Open-Meteo + JMA
@@ -86,9 +87,9 @@ Supabase:
 
 ## Expo / EAS
 
+- 지원 플랫폼: `android` (Samsung Galaxy)
 - Expo slug: `tripnow`
 - Android package: `com.qet1234.tripnow`
-- iOS bundle identifier: `com.qet1234.tripnow`
 - scheme: `tripnow://`
 
 신규 EAS 프로젝트 생성/연결 절차는 [docs/expo-eas-setup.md](docs/expo-eas-setup.md)를 따릅니다.
