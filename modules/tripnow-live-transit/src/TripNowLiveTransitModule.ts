@@ -1,4 +1,4 @@
-import { requireNativeModule } from "expo-modules-core";
+import { requireOptionalNativeModule } from "expo";
 
 export type TransitLiveUpdatePayload = {
   lineName: string;
@@ -11,15 +11,15 @@ export type TransitLiveUpdatePayload = {
   statusText?: string;
 };
 
-type SupportInfo = {
+export type TransitLiveUpdateSupport = {
   android: boolean;
   androidVersion: number;
   notificationsEnabled: boolean;
   liveUpdateEligible: boolean;
 };
 
-type TripNowLiveTransitNativeModule = {
-  getSupportInfo(): SupportInfo;
+export type TripNowLiveTransitNativeModule = {
+  getSupportInfo(): TransitLiveUpdateSupport;
   requestNotificationPermission(): boolean;
   start(
     lineName: string,
@@ -44,6 +44,6 @@ type TripNowLiveTransitNativeModule = {
   stop(finalMessage: string): boolean;
 };
 
-export default requireNativeModule<TripNowLiveTransitNativeModule>(
+export default requireOptionalNativeModule<TripNowLiveTransitNativeModule>(
   "TripNowLiveTransit",
 );
