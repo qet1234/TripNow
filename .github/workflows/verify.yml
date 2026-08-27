@@ -1,9 +1,10 @@
 name: Verify TripNow
 
+# TEMPORARILY PAUSED
+# GitHub Actions quota is exhausted. Keep this workflow manual-only
+# until 2026-09-01. Do not add push/pull_request triggers before then.
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   verify:
