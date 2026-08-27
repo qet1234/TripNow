@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "TripNow",
+    "slug": "tripnow",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "tripnow",
+    "userInterfaceStyle": "automatic",
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "TripNow는 현재 위치 주변의 관광지, 음식점, 이동 및 안전 정보를 제공하기 위해 위치를 사용합니다."
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.qet1234.tripnow"
+    },
+    "android": {
+      "package": "com.qet1234.tripnow",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
