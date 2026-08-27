@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/src/components/Screen";
 import { ActionCard } from "@/src/components/ActionCard";
+import { WeatherCard } from "@/src/components/WeatherCard";
 import { mockTrip } from "@/src/data/mockJapan";
 import { getJapanRegion, japanRegions } from "@/src/data/japanRegions";
 import { useTravelMode } from "@/src/context/TravelModeContext";
@@ -93,19 +94,15 @@ export default function NowScreen() {
             : "미리보기 모드 · 선택 지역 기준"}
         </Text>
 
-        <View style={styles.chips}>
-          <View style={styles.chip}>
-            <Text style={styles.chipMain}>☀️ {mockTrip.temperatureC}°C</Text>
-            <Text style={styles.chipSub}>{mockTrip.weatherLabel} · API 연결 예정</Text>
-          </View>
-          <View style={styles.chip}>
-            <Text style={styles.chipMain}>
-              💴 100엔 ≈ {mockTrip.jpy100ToKrw.toLocaleString()}원
-            </Text>
-            <Text style={styles.chipSub}>참고 환율 · API 연결 예정</Text>
-          </View>
+        <View style={styles.exchangeChip}>
+          <Text style={styles.chipMain}>
+            💴 100엔 ≈ {mockTrip.jpy100ToKrw.toLocaleString()}원
+          </Text>
+          <Text style={styles.chipSub}>참고 환율 · 환율 API 연결 예정</Text>
         </View>
       </View>
+
+      <WeatherCard region={region} />
 
       <Text style={styles.heading}>
         {mode === "local" ? "현지에서 무엇이 필요하세요?" : "일본 여행을 미리 살펴보세요"}
@@ -250,13 +247,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 14,
   },
-  chips: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 18,
-  },
-  chip: {
-    flex: 1,
+  exchangeChip: {
+    marginTop: 16,
     borderRadius: radius.sm,
     backgroundColor: colors.primarySoft,
     padding: 12,
