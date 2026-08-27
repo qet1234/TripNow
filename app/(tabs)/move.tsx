@@ -1,27 +1,65 @@
 import { StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/src/components/Screen";
 import { ActionCard } from "@/src/components/ActionCard";
+import { getJapanRegion } from "@/src/data/japanRegions";
+import { useTravelMode } from "@/src/context/TravelModeContext";
+import { openGoogleMapsDirections, openGoogleMapsSearch } from "@/src/services/navigation";
 import { colors, radius } from "@/src/theme";
 
 export default function MoveScreen() {
+  const { selectedRegionId } = useTravelMode();
+  const region = getJapanRegion(selectedRegionId);
+
   return (
     <Screen>
       <Text style={styles.title}>이동</Text>
-      <Text style={styles.subtitle}>현재 위치에서 목적지까지 필요한 이동 기능을 모았습니다.</Text>
+      <Text style={styles.subtitle}>
+        TripNow는 출발지 좌표를 서버에 보내지 않습니다. 길찾기의 현재 위치 처리는 Google Maps가 담당합니다.
+      </Text>
+
+      <View style={styles.regionCard}>
+        <Text style={styles.regionLabel}>선택 지역</Text>
+        <Text style={styles.regionName}>{region.label}</Text>
+        <Text style={styles.regionMeta}>
+          관광·교통 검색은 이 지역을 기준으로 합니다.
+        </Text>
+      </View>
 
       <View style={styles.hotel}>
         <Text style={styles.hotelLabel}>내 숙소</Text>
         <Text style={styles.hotelName}>숙소를 등록해 주세요</Text>
-        <Text style={styles.hotelMeta}>등록 후 항상 빠르게 귀가 경로를 확인할 수 있어요.</Text>
+        <Text style={styles.hotelMeta}>
+          숙소 정보는 기기에 저장하고 길찾기 때 목적지만 Google Maps에 전달합니다.
+        </Text>
       </View>
 
       <View style={styles.grid}>
-        <ActionCard icon="🏨" title="숙소로 가기" subtitle="현재 위치에서 바로" />
-        <ActionCard icon="🚶" title="도보 경로" subtitle="가까운 곳 이동" />
+        <ActionCard
+          icon="🏨"
+          title="숙소로 가기"
+          subtitle="숙소 등록 후 Google Maps 연결"
+        />
+        <ActionCard
+          icon="🗺️"
+          title="선택 지역 열기"
+          subtitle={region.label + " 지도 보기"}
+          onPress={() => openGoogleMapsSearch(region.label + " Japan")}
+        />
       </View>
       <View style={styles.grid}>
-        <ActionCard icon="🚇" title="대중교통" subtitle="전철·버스" tone="teal" />
-        <ActionCard icon="🚕" title="택시 안심" subtitle="1차 버전은 탑승 기록" tone="teal" />
+        <ActionCard
+          icon="🚇"
+          title="대중교통"
+          subtitle="Google Maps에서 경로 확인"
+          tone="teal"
+          onPress={() => openGoogleMapsDirections(region.label + " Japan")}
+        />
+        <ActionCard
+          icon="🚕"
+          title="택시 정보"
+          subtitle="실시간 위치 추적 없이 제공"
+          tone="teal"
+        />
       </View>
     </Screen>
   );
@@ -30,13 +68,22 @@ export default function MoveScreen() {
 const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: "800", color: colors.text },
   subtitle: { marginTop: 6, color: colors.textMuted, lineHeight: 21 },
+  regionCard: {
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md,
+    padding: 17,
+    marginTop: 20,
+  },
+  regionLabel: { color: colors.primary, fontWeight: "800", fontSize: 13 },
+  regionName: { color: colors.text, fontSize: 19, fontWeight: "800", marginTop: 5 },
+  regionMeta: { color: colors.textMuted, marginTop: 5, lineHeight: 19 },
   hotel: {
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
     borderRadius: radius.lg,
     padding: 20,
-    marginTop: 22,
+    marginTop: 14,
     marginBottom: 18,
   },
   hotelLabel: { color: colors.primary, fontWeight: "800", fontSize: 13 },
