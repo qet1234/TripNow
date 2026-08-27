@@ -7,3 +7,11 @@ export async function openGoogleMapsDirections(destination: string) {
 
   await Linking.openURL(url);
 }
+
+export async function openGoogleMapsSearch(query: string) {
+  const url =
+    "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent(query);
+
+  await Linking.openURL(url);
+}
