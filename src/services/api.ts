@@ -12,7 +12,7 @@ export type ApiStatus = "mock" | "connected";
 
 export const apiStatus: Record<string, ApiStatus> = {
   places: "mock",
-  weather: "mock",
+  weather: "connected",
   exchangeRate: "mock",
   safety: "mock",
   taxFree: "mock",
