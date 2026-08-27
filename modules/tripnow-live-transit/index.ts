@@ -1,15 +1,23 @@
 import TripNowLiveTransitNative, {
   type TransitLiveUpdatePayload,
+  type TransitLiveUpdateSupport,
 } from "./src/TripNowLiveTransitModule";
 
-export type { TransitLiveUpdatePayload };
+export type { TransitLiveUpdatePayload, TransitLiveUpdateSupport };
+
+const unsupported: TransitLiveUpdateSupport = {
+  android: false,
+  androidVersion: 0,
+  notificationsEnabled: false,
+  liveUpdateEligible: false,
+};
 
 export function getTransitLiveUpdateSupport() {
-  return TripNowLiveTransitNative.getSupportInfo();
+  return TripNowLiveTransitNative?.getSupportInfo() ?? unsupported;
 }
 
 export function requestTransitNotificationPermission() {
-  return TripNowLiveTransitNative.requestNotificationPermission();
+  return TripNowLiveTransitNative?.requestNotificationPermission() ?? false;
 }
 
 function normalize(payload: TransitLiveUpdatePayload) {
@@ -22,6 +30,8 @@ function normalize(payload: TransitLiveUpdatePayload) {
 }
 
 export function startTransitLiveUpdate(payload: TransitLiveUpdatePayload) {
+  if (!TripNowLiveTransitNative) return false;
+
   const p = normalize(payload);
   return TripNowLiveTransitNative.start(
     p.lineName,
@@ -36,6 +46,8 @@ export function startTransitLiveUpdate(payload: TransitLiveUpdatePayload) {
 }
 
 export function updateTransitLiveUpdate(payload: TransitLiveUpdatePayload) {
+  if (!TripNowLiveTransitNative) return false;
+
   const p = normalize(payload);
   return TripNowLiveTransitNative.update(
     p.lineName,
@@ -50,5 +62,5 @@ export function updateTransitLiveUpdate(payload: TransitLiveUpdatePayload) {
 }
 
 export function stopTransitLiveUpdate(finalMessage = "목적지에 도착했습니다.") {
-  return TripNowLiveTransitNative.stop(finalMessage);
+  return TripNowLiveTransitNative?.stop(finalMessage) ?? false;
 }
