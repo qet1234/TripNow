@@ -1,10 +1,11 @@
 /**
  * TripNow 외부 데이터 연결 원칙
  *
- * - Google Places/Routes처럼 키 보호 또는 비용 통제가 필요한 요청은
- *   가능하면 Supabase Edge Function을 통해 호출합니다.
- * - 한국수출입은행/외교부 인증키도 앱 번들에 직접 넣지 않습니다.
- * - 날씨처럼 공개 클라이언트 호출이 가능한 API도 추후 캐시 계층을 둘 수 있습니다.
+ * - 로그인/회원 DB를 사용하지 않습니다.
+ * - 사용자의 현재 위도/경도는 Supabase 또는 TripNow API로 전송하지 않습니다.
+ * - 장소/날씨 요청은 사용자가 선택한 일본 지역의 고정 중심좌표를 사용합니다.
+ * - Google Maps 길찾기는 목적지만 전달하고 현재 위치 처리는 Google Maps가 담당합니다.
+ * - 한국수출입은행/외교부 등 서버 인증키는 Edge Function secret으로 관리합니다.
  */
 
 export type ApiStatus = "mock" | "connected";
