@@ -21,6 +21,7 @@
 - 엔화 → 원화 환산
 - 선택 지역 기준 관광지·음식점·카페 탐색
 - 숙소 등록 및 Google Maps로 돌아가기
+- Galaxy 실시간 지하철 안내(Live Update / 진행형 알림)
 - 선택 지역 기준 경찰서·병원·대한민국 공관
 - 일본 긴급전화 110 / 119
 - 상황별 일본어 회화 카드
@@ -96,6 +97,7 @@ Supabase:
 
 - [앱 구조](docs/architecture.md)
 - [위치정보 처리 원칙](docs/location-privacy.md)
+- [Galaxy 실시간 지하철 안내](docs/galaxy-live-transit.md)
 - [일본 API 계획](docs/api-plan.md)
 - [Supabase 구성](docs/supabase-setup.md)
 - [Expo/EAS 연결](docs/expo-eas-setup.md)
