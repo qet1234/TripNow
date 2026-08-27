@@ -1,35 +1,82 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/src/components/Screen";
 import { ActionCard } from "@/src/components/ActionCard";
+import { getJapanRegion } from "@/src/data/japanRegions";
+import { useTravelMode } from "@/src/context/TravelModeContext";
+import { openGoogleMapsSearch } from "@/src/services/navigation";
 import { colors, radius } from "@/src/theme";
 
 export default function SafetyScreen() {
+  const { selectedRegionId } = useTravelMode();
+  const region = getJapanRegion(selectedRegionId);
+
   return (
     <Screen>
       <Text style={styles.title}>여행 안심</Text>
-      <Text style={styles.subtitle}>위급할 때 복잡한 검색 없이 필요한 기능을 바로 실행합니다.</Text>
+      <Text style={styles.subtitle}>
+        위치 공유나 이동경로 저장 없이 선택 지역 기준의 안전 기능을 제공합니다.
+      </Text>
 
       <View style={styles.notice}>
         <Text style={styles.noticeTitle}>🇯🇵 일본 긴급 연락</Text>
         <Text style={styles.noticeBody}>경찰 110 · 구급/소방 119</Text>
       </View>
 
+      <View style={styles.areaNote}>
+        <Text style={styles.areaTitle}>안전정보 기준 지역</Text>
+        <Text style={styles.areaBody}>{region.label}</Text>
+      </View>
+
       <View style={styles.grid}>
-        <ActionCard icon="🆘" title="긴급 SOS" subtitle="현지 긴급전화" tone="danger" />
-        <ActionCard icon="📍" title="위치 공유" subtitle="현재 위치 보내기" />
+        <ActionCard
+          icon="🆘"
+          title="경찰 110"
+          subtitle="전화 앱 열기"
+          tone="danger"
+          onPress={() => Linking.openURL("tel:110")}
+        />
+        <ActionCard
+          icon="🚑"
+          title="구급·소방 119"
+          subtitle="전화 앱 열기"
+          tone="danger"
+          onPress={() => Linking.openURL("tel:119")}
+        />
       </View>
       <View style={styles.grid}>
-        <ActionCard icon="👮" title="경찰서" subtitle="주변 경찰서 찾기" />
-        <ActionCard icon="🏥" title="병원" subtitle="주변 의료기관 찾기" />
+        <ActionCard
+          icon="👮"
+          title="경찰서"
+          subtitle="선택 지역 기준 Google Maps 검색"
+          onPress={() => openGoogleMapsSearch(region.label + " police station Japan")}
+        />
+        <ActionCard
+          icon="🏥"
+          title="병원"
+          subtitle="선택 지역 기준 Google Maps 검색"
+          onPress={() => openGoogleMapsSearch(region.label + " hospital Japan")}
+        />
       </View>
       <View style={styles.grid}>
-        <ActionCard icon="🇰🇷" title="한국 공관" subtitle="대사관·총영사관" tone="teal" />
-        <ActionCard icon="💬" title="긴급 문장" subtitle="일본어 큰 글씨 카드" tone="teal" />
+        <ActionCard
+          icon="🇰🇷"
+          title="한국 공관"
+          subtitle="대사관·총영사관 정보"
+          tone="teal"
+        />
+        <ActionCard
+          icon="💬"
+          title="긴급 문장"
+          subtitle="일본어 큰 글씨 카드"
+          tone="teal"
+        />
       </View>
 
       <View style={styles.checkin}>
-        <Text style={styles.checkinTitle}>안전 체크인</Text>
-        <Text style={styles.checkinBody}>호텔 도착 예정 시간을 등록하는 기능은 다음 단계에서 연결합니다.</Text>
+        <Text style={styles.checkinTitle}>1차 버전 개인정보 원칙</Text>
+        <Text style={styles.checkinBody}>
+          현재 위치 공유, 위치 이력 저장, 백그라운드 추적 기능은 사용하지 않습니다.
+        </Text>
       </View>
     </Screen>
   );
@@ -48,6 +95,14 @@ const styles = StyleSheet.create({
   },
   noticeTitle: { color: colors.text, fontSize: 17, fontWeight: "800" },
   noticeBody: { color: colors.danger, marginTop: 7, fontWeight: "800" },
+  areaNote: {
+    marginTop: 12,
+    padding: 15,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+  },
+  areaTitle: { color: colors.textMuted, fontSize: 12, fontWeight: "700" },
+  areaBody: { color: colors.primary, fontSize: 17, fontWeight: "800", marginTop: 4 },
   grid: { flexDirection: "row", gap: 12, marginTop: 12 },
   checkin: {
     marginTop: 18,
