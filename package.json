@@ -7,7 +7,9 @@
     "start": "expo start",
     "start:clear": "expo start --clear",
     "android": "expo run:android",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "bundle:android": "expo export --platform android --output-dir dist",
+    "check": "npm run typecheck && npx expo-doctor && npm run bundle:android"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

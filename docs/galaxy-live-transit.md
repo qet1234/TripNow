@@ -25,41 +25,18 @@ TripNow의 지하철 실시간 안내는 **Samsung Galaxy 전용**입니다. iOS
 
 알림을 시작하지 않습니다. 네이티브 모듈이 제조사를 확인하여 Galaxy 기기에서만 동작합니다.
 
-## 알림 데이터
+## 실시간 데이터 지원 범위
 
-네이티브 모듈은 다음 필드를 받습니다.
+1차 실시간 열차 위치 대상은 다음 6개 노선입니다.
 
-- 노선명
-- 방면
-- 출발 시각
-- 도착 예정 시각
-- 다음 역
-- 남은 역 수
-- 진행률
-- 정상/지연/운행상태
+- 도에이 아사쿠사선(A)
+- 도에이 미타선(I)
+- 도에이 신주쿠선(S)
+- 도에이 오에도선(E)
+- 요코하마 블루라인(B)
+- 요코하마 그린라인(G)
 
-## 구현
-
-- Android-only local Expo module
-- Samsung 제조사 확인
-- 지원 기기: NotificationCompat ProgressStyle + promoted ongoing 요청
-- 미지원 Galaxy: 표준 NotificationCompat 진행률 표시
-- POST_NOTIFICATIONS
-- POST_PROMOTED_NOTIFICATIONS
-- 시작 / 갱신 / 종료 API
-- 알림 클릭 시 TripNow 실행
-- 이동 화면 테스트 UI
-
-## 실제 지하철 데이터
-
-실제 자동 갱신에는 ODPT(Public Transportation Open Data Center) API 키가 필요합니다.
-
-1차 연결 대상:
-
-- Tokyo Metro
-- 도에이 지하철
-
-ODPT 실시간 데이터에서 다음을 정규화해 네이티브 알림에 전달합니다.
+도쿄메트로 9개 노선은 실시간 열차 위치가 아니라 운행정보 지원 대상으로 구분합니다.
 
 ```text
 ODPT / GTFS-Realtime
@@ -71,10 +48,25 @@ line / destination / delay / next stop / ETA
 Galaxy Live Update 또는 진행형 알림
 ```
 
-ODPT 개발자 등록과 API 키 발급이 완료되기 전까지 앱 화면에서는 테스트 데이터로 네이티브 표시를 검증합니다.
+## 알림 데이터
 
-## 중요
+- 노선명과 방면
+- 출발·도착 예정 시각
+- 다음 역과 남은 역 수
+- 진행률
+- 정상·지연·운행상태
 
-이 기능은 Expo Go로 검증할 수 없습니다. 로컬 Expo native module을 포함한 Android development/release build가 필요합니다.
+## 구현
 
-GitHub Actions는 자동 실행되지 않으며, 2026년 9월 1일까지 수동 실행도 하지 않습니다.
+- Android-only local Expo module
+- Samsung 제조사 확인
+- 지원 기기: NotificationCompat ProgressStyle + promoted ongoing 요청
+- 미지원 Galaxy: 표준 NotificationCompat 진행률 표시
+- POST_NOTIFICATIONS / POST_PROMOTED_NOTIFICATIONS
+- 시작 / 갱신 / 종료 API
+- 알림 클릭 시 TripNow 실행
+- 교통 화면 테스트 UI
+
+현재 앱 화면은 오에도선 샘플 데이터로 네이티브 표시를 검증합니다. 실제 자동 갱신은 ODPT 또는 GTFS-Realtime API를 서버에서 정규화한 뒤 활성화합니다.
+
+이 기능은 Expo Go로 검증할 수 없습니다. 로컬 Expo native module을 포함한 Android development 또는 release 빌드가 필요합니다.
