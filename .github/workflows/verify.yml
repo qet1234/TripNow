@@ -37,3 +37,5 @@ jobs:
         run: npx --no-install expo-doctor
       - name: Verify Android bundle
         run: npm run bundle:android
+      - name: Verify web export
+        run: npm run build:web

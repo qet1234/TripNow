@@ -3,7 +3,7 @@
     "name": "트립나우",
     "slug": "tripnow",
     "version": "0.1.0",
-    "platforms": ["android"],
+    "platforms": ["android", "web"],
     "orientation": "portrait",
     "scheme": "tripnow",
     "userInterfaceStyle": "light",
@@ -23,6 +23,10 @@
         "POST_NOTIFICATIONS",
         "android.permission.POST_PROMOTED_NOTIFICATIONS"
       ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
     }
   }
 }
