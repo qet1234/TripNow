@@ -31,6 +31,6 @@ jobs:
       - name: TypeScript check
         run: npm run typecheck
       - name: Expo dependency check
-        run: npx expo-doctor
+        run: npx --no-install expo-doctor
       - name: Verify Android bundle
         run: npm run bundle:android
