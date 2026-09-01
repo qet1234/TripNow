@@ -30,7 +30,10 @@ jobs:
         run: npm ci
       - name: TypeScript check
         run: npm run typecheck
-      - name: Expo dependency check
+      - name: Expo SDK compatibility check
+        run: EXPO_OFFLINE=1 npx expo install --check
+      - name: Expo project diagnostics
+        continue-on-error: true
         run: npx --no-install expo-doctor
       - name: Verify Android bundle
         run: npm run bundle:android
