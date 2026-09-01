@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import { ExploreMap } from "@/src/components/ExploreMap";
 import { Screen } from "@/src/components/Screen";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { mockPlaces } from "@/src/data/mockJapan";
@@ -61,20 +61,7 @@ export default function ExploreScreen() {
       </View>
 
       <View style={styles.mapCard}>
-        <MapView
-          key={selectedRegionId}
-          style={styles.map}
-          initialRegion={{
-            latitude: region.latitude,
-            longitude: region.longitude,
-            latitudeDelta: 0.022,
-            longitudeDelta: 0.022,
-          }}
-        >
-          {markers.map((marker) => (
-            <Marker key={marker.id} coordinate={{ latitude: marker.latitude, longitude: marker.longitude }} title={marker.title} pinColor={colors.primary} />
-          ))}
-        </MapView>
+        <ExploreMap key={selectedRegionId} region={region} markers={markers} />
         <View style={styles.mapLabel}><Text style={styles.mapLabelText}>{region.label}</Text></View>
       </View>
 
@@ -115,7 +102,6 @@ const styles = StyleSheet.create({
   modeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.teal },
   modeNoteText: { color: colors.textMuted, fontSize: 11 },
   mapCard: { height: 360, borderRadius: radius.lg, overflow: "hidden", borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-  map: { flex: 1 },
   mapLabel: { position: "absolute", left: 12, top: 12, backgroundColor: "rgba(255,255,255,0.92)", borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 7 },
   mapLabelText: { color: colors.text, fontSize: 11, fontWeight: "800" },
   placeCard: { minHeight: 116, marginTop: 14, padding: 10, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: "row", alignItems: "center", gap: 11 },
