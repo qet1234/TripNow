@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "TripNow",
+    "name": "트립나우",
     "slug": "tripnow",
     "version": "0.1.0",
     "platforms": ["android"],
     "orientation": "portrait",
     "scheme": "tripnow",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "plugins": [
       "expo-router",
       [

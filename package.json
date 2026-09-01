@@ -7,7 +7,9 @@
     "start": "expo start",
     "start:clear": "expo start --clear",
     "android": "expo run:android",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "bundle:android": "expo export --platform android --output-dir dist",
+    "check": "npm run typecheck && npx expo-doctor && npm run bundle:android"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -20,14 +22,17 @@
     "expo-secure-store": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
-    "react-native": "0.86.2",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
     "react-native-maps": "1.27.2",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
-    "react-native-url-polyfill": "^4.0.0"
+    "react-native-url-polyfill": "^4.0.0",
+    "react-native-web": "0.21.0"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "expo-doctor": "1.20.4",
     "typescript": "~6.0.3"
   },
   "engines": {

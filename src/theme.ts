@@ -1,20 +1,22 @@
 export const colors = {
-  background: "#F5F8FC",
+  background: "#F7F7F9",
   surface: "#FFFFFF",
-  primary: "#2563EB",
-  primarySoft: "#EAF1FF",
-  teal: "#0F9F8F",
-  tealSoft: "#E7F8F4",
-  text: "#10233F",
-  textMuted: "#6B7A90",
-  border: "#E4EAF2",
+  primary: "#FF5B52",
+  primarySoft: "#FFF0EE",
+  teal: "#1F9D68",
+  tealSoft: "#EAF8F1",
+  text: "#161A22",
+  textMuted: "#747982",
+  border: "#E7E8EC",
   danger: "#E5484D",
   dangerSoft: "#FFF0F1",
-  warning: "#F59E0B",
+  warning: "#F4A327",
+  blue: "#2D73D5",
 } as const;
 
 export const radius = {
   sm: 12,
   md: 18,
   lg: 24,
+  pill: 999,
 } as const;
