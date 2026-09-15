@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import type { ImageSourcePropType } from "react-native";
 
 export type RegionIconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
@@ -14,7 +15,8 @@ export type HomeRegionTheme = {
   soft: string;
   softStrong: string;
   landmarkIcon: RegionIconName;
-  heroImage: string;
+  heroImage: ImageSourcePropType;
+  artImage: ImageSourcePropType;
   description: string;
   nextTitle: string;
   nextMeta: string;
@@ -36,7 +38,8 @@ export const homeRegions: HomeRegionTheme[] = [
     soft: "#EAF5F1",
     softStrong: "#D7ECE6",
     landmarkIcon: "eiffel-tower",
-    heroImage: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1400&q=88",
+    heroImage: require("../../assets/regions/tokyo-hero.jpg"),
+    artImage: require("../../assets/regions/tokyo-art.png"),
     description: "일상이 여행이 되는 도시",
     nextTitle: "아사쿠사 산책",
     nextMeta: "11:00 · 센소지와 나카미세 거리",
@@ -56,7 +59,8 @@ export const homeRegions: HomeRegionTheme[] = [
     soft: "#FFF0E8",
     softStrong: "#FFDDCE",
     landmarkIcon: "castle",
-    heroImage: "https://images.unsplash.com/photo-1590559899731-a382839e5549?auto=format&fit=crop&w=1400&q=88",
+    heroImage: require("../../assets/regions/osaka-hero.jpg"),
+    artImage: require("../../assets/regions/osaka-art.png"),
     description: "맛으로 물드는 즐거운 도시",
     nextTitle: "도톤보리 미식 산책",
     nextMeta: "11:00 · 글리코상과 호젠지 요코초",
@@ -76,7 +80,8 @@ export const homeRegions: HomeRegionTheme[] = [
     soft: "#F7EDF8",
     softStrong: "#EBD8EE",
     landmarkIcon: "temple-buddhist",
-    heroImage: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1400&q=88",
+    heroImage: require("../../assets/regions/kyoto-hero.jpg"),
+    artImage: require("../../assets/regions/kyoto-art.png"),
     description: "시간이 머무는 고즈넉한 도시",
     nextTitle: "기요미즈데라 산책",
     nextMeta: "11:00 · 산넨자카와 니넨자카",
@@ -96,7 +101,8 @@ export const homeRegions: HomeRegionTheme[] = [
     soft: "#EAF7FA",
     softStrong: "#D5EEF4",
     landmarkIcon: "waves",
-    heroImage: "https://images.unsplash.com/photo-1670511915504-9f0f1df5a3de?auto=format&fit=crop&w=1400&q=88",
+    heroImage: require("../../assets/regions/fukuoka-hero.jpg"),
+    artImage: require("../../assets/regions/fukuoka-art.png"),
     description: "바다와 만나는 활기찬 도시",
     nextTitle: "오호리 공원 산책",
     nextMeta: "11:00 · 호수 산책로와 일본 정원",
