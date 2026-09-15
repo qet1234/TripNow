@@ -41,7 +41,7 @@ export const homeRegions: HomeRegionTheme[] = [
     heroImage: require("../../assets/regions/tokyo-hero.jpg"),
     artImage: require("../../assets/regions/tokyo-art.png"),
     description: "일상이 여행이 되는 도시",
-    nextTitle: "아사쿠사 산책",
+    nextTitle: "등록한 일정",
     nextMeta: "11:00 · 센소지와 나카미세 거리",
     schedule: [
       { time: "11:00", title: "아사쿠사", detail: "센소지와 나카미세 거리" },
@@ -62,7 +62,7 @@ export const homeRegions: HomeRegionTheme[] = [
     heroImage: require("../../assets/regions/osaka-hero.jpg"),
     artImage: require("../../assets/regions/osaka-art.png"),
     description: "맛으로 물드는 즐거운 도시",
-    nextTitle: "도톤보리 미식 산책",
+    nextTitle: "등록한 일정",
     nextMeta: "11:00 · 글리코상과 호젠지 요코초",
     schedule: [
       { time: "11:00", title: "도톤보리", detail: "글리코상 · 호젠지 요코초" },
@@ -83,7 +83,7 @@ export const homeRegions: HomeRegionTheme[] = [
     heroImage: require("../../assets/regions/kyoto-hero.jpg"),
     artImage: require("../../assets/regions/kyoto-art.png"),
     description: "시간이 머무는 고즈넉한 도시",
-    nextTitle: "기요미즈데라 산책",
+    nextTitle: "등록한 일정",
     nextMeta: "11:00 · 산넨자카와 니넨자카",
     schedule: [
       { time: "11:00", title: "기요미즈데라", detail: "산넨자카 · 니넨자카" },
@@ -104,7 +104,7 @@ export const homeRegions: HomeRegionTheme[] = [
     heroImage: require("../../assets/regions/fukuoka-hero.jpg"),
     artImage: require("../../assets/regions/fukuoka-art.png"),
     description: "바다와 만나는 활기찬 도시",
-    nextTitle: "오호리 공원 산책",
+    nextTitle: "등록한 일정",
     nextMeta: "11:00 · 호수 산책로와 일본 정원",
     schedule: [
       { time: "11:00", title: "오호리 공원", detail: "호수 산책로 · 일본 정원" },
