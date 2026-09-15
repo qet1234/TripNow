@@ -33,6 +33,14 @@ export const japanRegions: JapanRegion[] = [
     longitude: 135.5013,
   },
   {
+    id: "kyoto-gion",
+    city: "교토",
+    area: "기온",
+    label: "교토 · 기온",
+    latitude: 35.0037,
+    longitude: 135.7788,
+  },
+  {
     id: "fukuoka-hakata",
     city: "후쿠오카",
     area: "하카타",
