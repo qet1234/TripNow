@@ -2,6 +2,7 @@ import type { ComponentProps } from "react";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";
 import {
+  Image,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -37,13 +38,8 @@ export default function HomeScreen() {
       <View style={[styles.themeWash, { backgroundColor: region.soft }]} />
 
       <View style={styles.header}>
-        <View style={styles.brandRow}>
-          <Text style={[styles.brand, { color: region.accentDark }]}>트립나우</Text>
-          <View style={styles.brandMark}>
-            <View style={[styles.sun, { backgroundColor: region.softStrong }]} />
-            <MaterialCommunityIcons color={region.accent} name={region.landmarkIcon} size={38} />
-          </View>
-        </View>
+        <Text style={[styles.brand, { color: region.accentDark }]}>트립나우</Text>
+        <Image resizeMode="contain" source={region.artImage} style={styles.headerArt} />
         <Pressable
           accessibilityLabel="알림 열기"
           hitSlop={10}
@@ -88,12 +84,6 @@ export default function HomeScreen() {
           <Text style={styles.tripDay}>여행 2일차</Text>
         </View>
         <View style={styles.titleDecoration}>
-          <MaterialCommunityIcons
-            color={region.accent}
-            name={region.landmarkIcon}
-            size={64}
-            style={styles.landmark}
-          />
           <Text style={[styles.eyebrow, { color: region.accent }]}>{region.eyebrow}</Text>
         </View>
       </View>
@@ -108,7 +98,7 @@ export default function HomeScreen() {
       <ImageBackground
         accessibilityLabel={`${region.name} 대표 여행 사진`}
         imageStyle={styles.heroImage}
-        source={{ uri: region.heroImage }}
+        source={region.heroImage}
         style={styles.hero}
       >
         <View style={styles.heroShade}>
@@ -129,8 +119,8 @@ export default function HomeScreen() {
           <Text numberOfLines={1} style={styles.ticketTitle}>{region.nextTitle}</Text>
           <Text numberOfLines={1} style={styles.ticketMeta}>{region.nextMeta}</Text>
         </View>
-        <View style={[styles.ticketWatermark, { backgroundColor: region.soft }]}> 
-          <MaterialCommunityIcons color={region.accent} name={region.landmarkIcon} size={46} />
+        <View style={styles.ticketWatermark}>
+          <Image resizeMode="contain" source={region.artImage} style={styles.ticketArt} />
         </View>
         <Pressable
           onPress={() => router.push("/move")}
@@ -212,66 +202,64 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  themeWash: { position: "absolute", top: -40, left: -100, right: -100, height: 285, opacity: 0.5 },
-  header: { minHeight: 46, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  brandRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  brand: { fontSize: 25, fontWeight: "900", letterSpacing: -1.2 },
-  brandMark: { width: 58, height: 38, alignItems: "center", justifyContent: "center" },
-  sun: { position: "absolute", top: 0, width: 20, height: 20, borderRadius: 10 },
-  bellButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center" },
+  themeWash: { position: "absolute", top: -40, left: -100, right: -100, height: 250, opacity: 0.55 },
+  header: { minHeight: 43, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", overflow: "visible" },
+  brand: { paddingTop: 3, fontSize: 24, fontWeight: "900", letterSpacing: -1.2, zIndex: 2 },
+  headerArt: { position: "absolute", width: 142, height: 82, top: -9, right: 30, opacity: 0.93 },
+  bellButton: { width: 38, height: 38, alignItems: "center", justifyContent: "center", zIndex: 3 },
   alertDot: { position: "absolute", width: 8, height: 8, borderRadius: 4, right: 5, top: 5 },
-  regionTabs: { gap: 7, paddingVertical: 9, paddingRight: 12 },
-  regionTab: { minWidth: 68, height: 32, paddingHorizontal: 17, borderWidth: 1, borderColor: "#D7DDDB", borderRadius: 18, backgroundColor: "rgba(255,255,255,0.82)", alignItems: "center", justifyContent: "center" },
-  regionTabText: { color: "#425159", fontSize: 12, fontWeight: "800" },
+  regionTabs: { flexGrow: 1, justifyContent: "space-between", gap: 6, paddingTop: 2, paddingBottom: 9, paddingRight: 0 },
+  regionTab: { minWidth: 0, flex: 1, height: 29, paddingHorizontal: 10, borderWidth: 1, borderColor: "#D7DDDB", borderRadius: 16, backgroundColor: "rgba(255,255,255,0.86)", alignItems: "center", justifyContent: "center" },
+  regionTabText: { color: "#425159", fontSize: 11, fontWeight: "800" },
   regionTabTextActive: { color: "#FFFFFF" },
-  titleBlock: { minHeight: 114, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", paddingTop: 2 },
-  cityTitle: { fontSize: 30, lineHeight: 34, fontWeight: "900", letterSpacing: -1.5 },
-  headline: { color: "#10242A", fontSize: 29, lineHeight: 34, fontWeight: "900", letterSpacing: -1.4 },
-  tripDay: { color: "#5E6B70", fontSize: 12, fontWeight: "700", marginTop: 7 },
-  titleDecoration: { width: 126, alignItems: "flex-end", paddingTop: 2 },
-  landmark: { opacity: 0.28, marginRight: 10 },
-  eyebrow: { marginTop: 1, maxWidth: 105, fontSize: 8, lineHeight: 12, fontWeight: "800", letterSpacing: 2, textAlign: "right" },
-  search: { minHeight: 48, borderRadius: 14, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#D8DEDC", flexDirection: "row", alignItems: "center", paddingHorizontal: 14, gap: 10, shadowColor: "#24352E", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 2 },
+  titleBlock: { minHeight: 83, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", paddingTop: 0 },
+  cityTitle: { fontSize: 27, lineHeight: 29, fontWeight: "900", letterSpacing: -1.4 },
+  headline: { color: "#10242A", fontSize: 27, lineHeight: 29, fontWeight: "900", letterSpacing: -1.3 },
+  tripDay: { color: "#5E6B70", fontSize: 11, fontWeight: "700", marginTop: 5 },
+  titleDecoration: { width: 104, alignItems: "flex-end", justifyContent: "flex-end", paddingTop: 36 },
+  eyebrow: { maxWidth: 100, fontSize: 8, lineHeight: 12, fontWeight: "800", letterSpacing: 2, textAlign: "right" },
+  search: { minHeight: 43, borderRadius: 13, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#D8DEDC", flexDirection: "row", alignItems: "center", paddingHorizontal: 13, gap: 9, shadowColor: "#24352E", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 2 },
   searchText: { flex: 1, color: "#6F7B80", fontSize: 14, fontWeight: "600" },
   searchDivider: { width: 1, height: 24, backgroundColor: "#E3E8E6" },
-  hero: { height: 205, marginTop: 14, justifyContent: "flex-end" },
-  heroImage: { borderRadius: 19 },
-  heroShade: { flex: 1, justifyContent: "flex-end", borderRadius: 19, paddingHorizontal: 18, paddingBottom: 16, backgroundColor: "rgba(7,24,25,0.22)" },
-  heroCity: { color: "#FFFFFF", fontSize: 20, fontWeight: "900", letterSpacing: 4 },
-  heroDescription: { color: "#FFFFFF", fontSize: 12, fontWeight: "700", marginTop: 3 },
-  ticket: { minHeight: 112, marginTop: 12, borderWidth: 1, borderRadius: 17, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", overflow: "hidden", shadowColor: "#1D2F28", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3 },
+  hero: { height: 137, marginTop: 10, justifyContent: "flex-end" },
+  heroImage: { borderRadius: 17 },
+  heroShade: { flex: 1, justifyContent: "flex-end", borderRadius: 17, paddingHorizontal: 15, paddingBottom: 12, backgroundColor: "rgba(7,24,25,0.18)" },
+  heroCity: { color: "#FFFFFF", fontSize: 18, fontWeight: "900", letterSpacing: 4 },
+  heroDescription: { color: "#FFFFFF", fontSize: 11, fontWeight: "700", marginTop: 2 },
+  ticket: { minHeight: 84, marginTop: 9, borderWidth: 1, borderRadius: 15, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", overflow: "hidden", shadowColor: "#1D2F28", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3 },
   ticketBand: { width: 7, alignSelf: "stretch" },
-  notch: { position: "absolute", width: 18, height: 18, borderRadius: 9, backgroundColor: "#F7F7F9", top: 47 },
+  notch: { position: "absolute", width: 16, height: 16, borderRadius: 8, backgroundColor: "#F7F7F9", top: 34 },
   notchLeft: { left: -10 },
   notchRight: { right: -10 },
-  ticketCopy: { flex: 1, paddingLeft: 16, paddingVertical: 14, zIndex: 2 },
+  ticketCopy: { flex: 1, paddingLeft: 14, paddingVertical: 10, zIndex: 2 },
   ticketLabelRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   ticketLabel: { fontSize: 11, fontWeight: "900" },
-  ticketTitle: { color: "#10242A", fontSize: 20, fontWeight: "900", marginTop: 6, letterSpacing: -0.7 },
-  ticketMeta: { color: "#617076", fontSize: 11, fontWeight: "600", marginTop: 4 },
-  ticketWatermark: { width: 62, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", opacity: 0.85 },
-  routeButton: { height: 51, borderRadius: 15, paddingHorizontal: 13, marginHorizontal: 11, flexDirection: "row", gap: 3, alignItems: "center", justifyContent: "center", zIndex: 2 },
-  routeButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
-  quickGrid: { flexDirection: "row", gap: 8, marginTop: 13 },
-  quickAction: { flex: 1, minWidth: 0, height: 108, borderRadius: 17, backgroundColor: "rgba(255,255,255,0.88)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#EDF0EF" },
-  quickIcon: { width: 53, height: 53, borderRadius: 27, alignItems: "center", justifyContent: "center" },
-  quickLabel: { color: "#263B42", fontSize: 11, fontWeight: "800", marginTop: 8 },
-  sectionHeading: { marginTop: 20, marginBottom: 7, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  sectionTitle: { color: "#10242A", fontSize: 21, fontWeight: "900", letterSpacing: -0.7 },
+  ticketTitle: { color: "#10242A", fontSize: 18, fontWeight: "900", marginTop: 4, letterSpacing: -0.7 },
+  ticketMeta: { color: "#617076", fontSize: 10, fontWeight: "600", marginTop: 3 },
+  ticketWatermark: { width: 76, height: 78, alignItems: "center", justifyContent: "center", overflow: "hidden", opacity: 0.9 },
+  ticketArt: { width: 84, height: 90 },
+  routeButton: { height: 44, borderRadius: 14, paddingHorizontal: 11, marginHorizontal: 9, flexDirection: "row", gap: 3, alignItems: "center", justifyContent: "center", zIndex: 2 },
+  routeButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
+  quickGrid: { flexDirection: "row", gap: 7, marginTop: 9 },
+  quickAction: { flex: 1, minWidth: 0, height: 84, borderRadius: 15, backgroundColor: "rgba(255,255,255,0.9)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#EDF0EF" },
+  quickIcon: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
+  quickLabel: { color: "#263B42", fontSize: 10, fontWeight: "800", marginTop: 5 },
+  sectionHeading: { marginTop: 13, marginBottom: 4, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  sectionTitle: { color: "#10242A", fontSize: 18, fontWeight: "900", letterSpacing: -0.7 },
   seeAllButton: { flexDirection: "row", alignItems: "center" },
   seeAll: { fontSize: 12, fontWeight: "900" },
   scheduleList: { position: "relative" },
   scheduleLine: { position: "absolute", width: 2, top: 24, bottom: 24, left: 7 },
-  scheduleRow: { minHeight: 68, flexDirection: "row", alignItems: "center", borderBottomWidth: 1, borderBottomColor: "#EDF0EF" },
+  scheduleRow: { minHeight: 48, flexDirection: "row", alignItems: "center", borderBottomWidth: 1, borderBottomColor: "#EDF0EF" },
   scheduleDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 4, marginRight: 14, zIndex: 2 },
   scheduleTime: { width: 48, color: "#4D626A", fontSize: 12, fontWeight: "700" },
   scheduleCopy: { flex: 1, minWidth: 0 },
-  scheduleTitle: { color: "#10242A", fontSize: 16, fontWeight: "900" },
-  scheduleDetail: { color: "#718086", fontSize: 11, fontWeight: "600", marginTop: 3 },
-  budgetCard: { minHeight: 66, marginTop: 14, borderRadius: 17, flexDirection: "row", alignItems: "center", paddingHorizontal: 13, gap: 10 },
+  scheduleTitle: { color: "#10242A", fontSize: 14, fontWeight: "900" },
+  scheduleDetail: { color: "#718086", fontSize: 10, fontWeight: "600", marginTop: 2 },
+  budgetCard: { minHeight: 52, marginTop: 9, borderRadius: 15, flexDirection: "row", alignItems: "center", paddingHorizontal: 12, gap: 9 },
   budgetIcon: { width: 34, height: 34, borderRadius: 11, alignItems: "center", justifyContent: "center" },
   budgetLabel: { color: "#33484F", fontSize: 11, fontWeight: "800" },
-  budgetValue: { flex: 1, fontSize: 23, fontWeight: "900", letterSpacing: -0.8 },
+  budgetValue: { flex: 1, fontSize: 21, fontWeight: "900", letterSpacing: -0.8 },
   budgetDivider: { width: 1, height: 24, opacity: 0.5 },
   budgetNote: { color: "#6E7A7E", fontSize: 9, fontWeight: "700" },
 });
