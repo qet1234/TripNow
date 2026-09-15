@@ -98,6 +98,7 @@ export default function HomeScreen() {
       <ImageBackground
         accessibilityLabel={`${region.name} 대표 여행 사진`}
         imageStyle={styles.heroImage}
+        resizeMode="cover"
         source={region.heroImage}
         style={styles.hero}
       >
@@ -221,8 +222,8 @@ const styles = StyleSheet.create({
   search: { minHeight: 43, borderRadius: 13, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#D8DEDC", flexDirection: "row", alignItems: "center", paddingHorizontal: 13, gap: 9, shadowColor: "#24352E", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 2 },
   searchText: { flex: 1, color: "#6F7B80", fontSize: 14, fontWeight: "600" },
   searchDivider: { width: 1, height: 24, backgroundColor: "#E3E8E6" },
-  hero: { height: 137, marginTop: 10, justifyContent: "flex-end" },
-  heroImage: { borderRadius: 17 },
+  hero: { width: "100%", height: 137, marginTop: 10, borderRadius: 17, overflow: "hidden", justifyContent: "flex-end" },
+  heroImage: { width: "100%", height: "100%", borderRadius: 17 },
   heroShade: { flex: 1, justifyContent: "flex-end", borderRadius: 17, paddingHorizontal: 15, paddingBottom: 12, backgroundColor: "rgba(7,24,25,0.18)" },
   heroCity: { color: "#FFFFFF", fontSize: 18, fontWeight: "900", letterSpacing: 4 },
   heroDescription: { color: "#FFFFFF", fontSize: 11, fontWeight: "700", marginTop: 2 },
