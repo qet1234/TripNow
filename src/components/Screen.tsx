@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { useResponsiveLayout } from "@/src/hooks/useResponsiveLayout";
 import { colors } from "@/src/theme";
 
 type Props = PropsWithChildren<{
@@ -8,13 +9,40 @@ type Props = PropsWithChildren<{
 }>;
 
 export function Screen({ children, scroll = true }: Props) {
-  const content = <View style={styles.content}>{children}</View>;
+  const {
+    contentMaxWidth,
+    horizontalPadding,
+    isCompactWidth,
+    isLargeScreen,
+  } = useResponsiveLayout();
+  const content = (
+    <View
+      style={[
+        styles.content,
+        {
+          maxWidth: contentMaxWidth,
+          paddingBottom: isLargeScreen ? 40 : 32,
+          paddingHorizontal: horizontalPadding,
+          paddingTop: isCompactWidth ? 8 : 12,
+        },
+      ]}
+    >
+      {children}
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar style="dark" />
       {scroll ? (
-        <ScrollView contentContainerStyle={styles.scroll}>{content}</ScrollView>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          contentInsetAdjustmentBehavior="automatic"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {content}
+        </ScrollView>
       ) : (
         content
       )}
@@ -29,14 +57,11 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flexGrow: 1,
+    width: "100%",
   },
   content: {
     flex: 1,
     width: "100%",
-    maxWidth: 560,
     alignSelf: "center",
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 32,
   },
 });
