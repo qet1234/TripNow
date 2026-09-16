@@ -2,19 +2,35 @@ import type { ComponentProps } from "react";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Tabs } from "expo-router";
 import { StyleSheet, View, type ColorValue } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/src/theme";
 import { getHomeRegion } from "@/src/data/homeRegions";
 import { useTravelMode } from "@/src/context/TravelModeContext";
+import { useResponsiveLayout } from "@/src/hooks/useResponsiveLayout";
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
-const tabIcon = (activeName: IconName, inactiveName: IconName, accent: string, activeColor: string, activeSoft: string) =>
+const tabIcon = (
+  activeName: IconName,
+  inactiveName: IconName,
+  accent: string,
+  activeColor: string,
+  activeSoft: string,
+  iconSize: number,
+  iconWrapSize: number,
+) =>
   function TabIcon({ focused }: { focused: boolean; color: ColorValue; size: number }) {
     return (
-      <View style={[styles.iconWrap, focused && { backgroundColor: activeSoft }]}>
+      <View
+        style={[
+          styles.iconWrap,
+          { borderRadius: iconWrapSize / 2, height: iconWrapSize, width: iconWrapSize },
+          focused && { backgroundColor: activeSoft },
+        ]}
+      >
         <MaterialCommunityIcons
           name={focused ? activeName : inactiveName}
-          size={focused ? 25 : 24}
+          size={focused ? iconSize + 1 : iconSize}
           color={focused ? activeColor : accent}
         />
       </View>
@@ -22,8 +38,24 @@ const tabIcon = (activeName: IconName, inactiveName: IconName, accent: string, a
   };
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
   const { selectedRegionId } = useTravelMode();
+  const { contentMaxWidth, isCompactWidth, isLargeScreen } = useResponsiveLayout();
   const regionTheme = getHomeRegion(selectedRegionId);
+  const bottomPadding = Math.max(insets.bottom, isCompactWidth ? 6 : 9);
+  const iconSize = isCompactWidth ? 22 : isLargeScreen ? 27 : 24;
+  const iconWrapSize = isCompactWidth ? 32 : isLargeScreen ? 38 : 34;
+  const tabContentHeight = isCompactWidth ? 58 : isLargeScreen ? 66 : 61;
+  const makeTabIcon = (activeName: IconName, inactiveName: IconName, inactiveColor: string) =>
+    tabIcon(
+      activeName,
+      inactiveName,
+      inactiveColor,
+      regionTheme.accent,
+      regionTheme.soft,
+      iconSize,
+      iconWrapSize,
+    );
 
   return (
     <Tabs
@@ -32,23 +64,27 @@ export default function TabsLayout() {
         tabBarActiveTintColor: regionTheme.accent,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          height: 70,
+          height: tabContentHeight + bottomPadding,
           width: "100%",
-          maxWidth: 560,
+          maxWidth: contentMaxWidth,
           alignSelf: "center",
-          paddingBottom: 9,
-          paddingTop: 8,
+          paddingBottom: bottomPadding,
+          paddingTop: isCompactWidth ? 6 : 8,
           borderTopColor: colors.border,
           backgroundColor: colors.surface,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "800" },
+        tabBarItemStyle: { minWidth: 56 },
+        tabBarLabelStyle: {
+          fontSize: isCompactWidth ? 10 : isLargeScreen ? 12 : 11,
+          fontWeight: "800",
+        },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "홈", tabBarIcon: tabIcon("home-variant", "home-variant-outline", "#69717D", regionTheme.accent, regionTheme.soft) }} />
-      <Tabs.Screen name="explore" options={{ title: "탐색", tabBarIcon: tabIcon("compass", "compass-outline", "#2F6FED", regionTheme.accent, regionTheme.soft) }} />
-      <Tabs.Screen name="schedule" options={{ title: "일정", tabBarIcon: tabIcon("calendar-check", "calendar-check-outline", "#8B3FD6", regionTheme.accent, regionTheme.soft) }} />
-      <Tabs.Screen name="move" options={{ title: "교통", tabBarIcon: tabIcon("train", "train", "#0A9C9C", regionTheme.accent, regionTheme.soft) }} />
-      <Tabs.Screen name="profile" options={{ title: "마이", tabBarIcon: tabIcon("account-circle", "account-circle-outline", "#8A8178", regionTheme.accent, regionTheme.soft) }} />
+      <Tabs.Screen name="index" options={{ title: "홈", tabBarIcon: makeTabIcon("home-variant", "home-variant-outline", "#69717D") }} />
+      <Tabs.Screen name="explore" options={{ title: "탐색", tabBarIcon: makeTabIcon("compass", "compass-outline", "#2F6FED") }} />
+      <Tabs.Screen name="schedule" options={{ title: "일정", tabBarIcon: makeTabIcon("calendar-check", "calendar-check-outline", "#8B3FD6") }} />
+      <Tabs.Screen name="move" options={{ title: "교통", tabBarIcon: makeTabIcon("train", "train", "#0A9C9C") }} />
+      <Tabs.Screen name="profile" options={{ title: "마이", tabBarIcon: makeTabIcon("account-circle", "account-circle-outline", "#8A8178") }} />
       <Tabs.Screen name="safety" options={{ href: null }} />
       <Tabs.Screen name="travel" options={{ href: null }} />
     </Tabs>
@@ -57,9 +93,6 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   iconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
   },
