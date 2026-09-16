@@ -11,7 +11,10 @@ import { openGoogleMapsSearch } from "@/src/services/navigation";
 import { colors, radius } from "@/src/theme";
 
 function getMapQuery(item: ScheduleItem, city: string) {
-  return item.placeQuery?.trim() || `${item.title} ${city} Japan`;
+  if (item.placeLatitude !== undefined && item.placeLongitude !== undefined) {
+    return `${item.placeLatitude},${item.placeLongitude}`;
+  }
+  return item.placeAddress?.trim() || item.placeQuery?.trim() || `${item.title} ${city} Japan`;
 }
 
 export default function ScheduleScreen() {
@@ -51,14 +54,7 @@ export default function ScheduleScreen() {
           const active = day === selectedDay;
           const count = regionSchedules.filter((item) => item.day === day).length;
           return (
-            <Pressable
-              key={day}
-              onPress={() => setSelectedDay(day)}
-              style={[
-                styles.dayTab,
-                active && { backgroundColor: region.accent, borderColor: region.accent },
-              ]}
-            >
+            <Pressable key={day} onPress={() => setSelectedDay(day)} style={[styles.dayTab, active && { backgroundColor: region.accent, borderColor: region.accent }]}>
               <Text style={[styles.dayText, active && styles.dayTextActive]}>{day}일차</Text>
               <Text style={[styles.dayCount, active && styles.dayCountActive]}>{count}</Text>
             </Pressable>
@@ -67,19 +63,13 @@ export default function ScheduleScreen() {
       </ScrollView>
 
       {!hydrated ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>일정을 불러오는 중입니다</Text>
-        </View>
+        <View style={styles.emptyState}><Text style={styles.emptyTitle}>일정을 불러오는 중입니다</Text></View>
       ) : daySchedules.length === 0 ? (
         <View style={styles.emptyState}>
-          <View style={[styles.emptyIcon, { backgroundColor: region.soft }]}> 
-            <MaterialCommunityIcons color={region.accent} name="calendar-plus" size={30} />
-          </View>
+          <View style={[styles.emptyIcon, { backgroundColor: region.soft }]}><MaterialCommunityIcons color={region.accent} name="calendar-plus" size={30} /></View>
           <Text style={styles.emptyTitle}>{selectedDay}일차 일정이 아직 없습니다</Text>
           <Text style={styles.emptyDescription}>시간과 장소를 등록하면 홈 화면의 오늘 일정에도 자동으로 표시됩니다.</Text>
-          <Pressable onPress={() => router.push(addRoute)} style={[styles.emptyButton, { backgroundColor: region.accent }]}> 
-            <Text style={styles.emptyButtonText}>첫 일정 추가</Text>
-          </Pressable>
+          <Pressable onPress={() => router.push(addRoute)} style={[styles.emptyButton, { backgroundColor: region.accent }]}><Text style={styles.emptyButtonText}>첫 일정 추가</Text></Pressable>
         </View>
       ) : (
         <View style={styles.timeline}>
@@ -91,14 +81,9 @@ export default function ScheduleScreen() {
                 {index < daySchedules.length - 1 ? <View style={[styles.line, { backgroundColor: region.softStrong }]} /> : null}
               </View>
               <View style={styles.eventCard}>
-                <Pressable
-                  onPress={() => router.push(`/schedule-edit?id=${encodeURIComponent(item.id)}`)}
-                  style={styles.eventMain}
-                >
+                <Pressable onPress={() => router.push(`/schedule-edit?id=${encodeURIComponent(item.id)}`)} style={styles.eventMain}>
                   <View style={styles.eventTop}>
-                    <View style={[styles.eventIcon, { backgroundColor: region.soft }]}> 
-                      <MaterialCommunityIcons color={region.accent} name="map-marker-outline" size={22} />
-                    </View>
+                    <View style={[styles.eventIcon, { backgroundColor: region.soft }]}><MaterialCommunityIcons color={region.accent} name="map-marker-outline" size={22} /></View>
                     <View style={styles.eventCopy}>
                       <Text numberOfLines={1} style={styles.eventTitle}>{item.title}</Text>
                       <Text style={styles.eventDate}>{item.date}</Text>
@@ -106,7 +91,12 @@ export default function ScheduleScreen() {
                     <MaterialCommunityIcons color="#63747A" name="chevron-right" size={23} />
                   </View>
                   {item.detail ? <Text style={styles.eventDetail}>{item.detail}</Text> : null}
-                  {item.placeQuery ? (
+                  {item.placeAddress ? (
+                    <View style={styles.placeQueryRow}>
+                      <MaterialCommunityIcons color={colors.textMuted} name="map-marker-check-outline" size={14} />
+                      <Text numberOfLines={2} style={styles.placeQueryText}>{item.placeAddress}</Text>
+                    </View>
+                  ) : item.placeQuery ? (
                     <View style={styles.placeQueryRow}>
                       <MaterialCommunityIcons color={colors.textMuted} name="map-search-outline" size={14} />
                       <Text numberOfLines={1} style={styles.placeQueryText}>{item.placeQuery}</Text>
@@ -114,18 +104,12 @@ export default function ScheduleScreen() {
                   ) : null}
                 </Pressable>
                 <View style={styles.eventActions}>
-                  <Pressable
-                    onPress={() => void openGoogleMapsSearch(getMapQuery(item, japanRegion.city))}
-                    style={styles.actionButton}
-                  >
+                  <Pressable onPress={() => void openGoogleMapsSearch(getMapQuery(item, japanRegion.city))} style={styles.actionButton}>
                     <MaterialCommunityIcons color={region.accent} name="map-search-outline" size={16} />
                     <Text style={[styles.actionText, { color: region.accent }]}>지도</Text>
                   </Pressable>
                   <View style={styles.actionDivider} />
-                  <Pressable
-                    onPress={() => router.push(`/move?scheduleId=${encodeURIComponent(item.id)}`)}
-                    style={styles.actionButton}
-                  >
+                  <Pressable onPress={() => router.push(`/move?scheduleId=${encodeURIComponent(item.id)}`)} style={styles.actionButton}>
                     <MaterialCommunityIcons color={region.accent} name="directions" size={16} />
                     <Text style={[styles.actionText, { color: region.accent }]}>경로 보기</Text>
                   </Pressable>
@@ -136,7 +120,7 @@ export default function ScheduleScreen() {
         </View>
       )}
 
-      <Pressable onPress={() => router.push(addRoute)} style={[styles.addButton, { backgroundColor: region.accent }]}> 
+      <Pressable onPress={() => router.push(addRoute)} style={[styles.addButton, { backgroundColor: region.accent }]}>
         <MaterialCommunityIcons color="#FFFFFF" name="plus" size={20} />
         <Text style={styles.addButtonText}>일정 추가</Text>
       </Pressable>
@@ -170,8 +154,8 @@ const styles = StyleSheet.create({
   eventTitle: { color: colors.text, fontSize: 15, fontWeight: "900" },
   eventDate: { color: colors.textMuted, fontSize: 10, fontWeight: "700", marginTop: 3 },
   eventDetail: { color: colors.textMuted, fontSize: 12, lineHeight: 18, fontWeight: "600", marginTop: 9 },
-  placeQueryRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 7 },
-  placeQueryText: { flex: 1, color: colors.textMuted, fontSize: 10, fontWeight: "600" },
+  placeQueryRow: { flexDirection: "row", alignItems: "flex-start", gap: 5, marginTop: 7 },
+  placeQueryText: { flex: 1, color: colors.textMuted, fontSize: 10, lineHeight: 15, fontWeight: "600" },
   eventActions: { height: 42, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: "row", alignItems: "center" },
   actionButton: { flex: 1, height: "100%", flexDirection: "row", gap: 5, alignItems: "center", justifyContent: "center" },
   actionText: { fontSize: 11, fontWeight: "900" },

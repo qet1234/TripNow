@@ -11,7 +11,10 @@ import { openGoogleMapsDirections, openGoogleMapsSearch } from "@/src/services/n
 import { colors, radius } from "@/src/theme";
 
 function getMapQuery(item: ScheduleItem, city: string) {
-  return item.placeQuery?.trim() || `${item.title} ${city} Japan`;
+  if (item.placeLatitude !== undefined && item.placeLongitude !== undefined) {
+    return `${item.placeLatitude},${item.placeLongitude}`;
+  }
+  return item.placeAddress?.trim() || item.placeQuery?.trim() || `${item.title} ${city} Japan`;
 }
 
 export default function MoveScreen() {
@@ -23,9 +26,7 @@ export default function MoveScreen() {
   const regionSchedules = getSchedulesByRegion(selectedRegionId);
   const requested = params.scheduleId ? getScheduleById(params.scheduleId) : undefined;
   const target = requested?.regionId === selectedRegionId ? requested : regionSchedules[0];
-  const sameDay = target
-    ? regionSchedules.filter((item) => item.day === target.day && item.date === target.date)
-    : [];
+  const sameDay = target ? regionSchedules.filter((item) => item.day === target.day && item.date === target.date) : [];
   const targetIndex = target ? sameDay.findIndex((item) => item.id === target.id) : -1;
   const previous = targetIndex > 0 ? sameDay[targetIndex - 1] : undefined;
 
@@ -36,10 +37,7 @@ export default function MoveScreen() {
 
   const openDirections = () => {
     if (!target) return;
-    void openGoogleMapsDirections(destinationQuery, {
-      origin: originQuery,
-      travelMode: "transit",
-    });
+    void openGoogleMapsDirections(destinationQuery, { origin: originQuery, travelMode: "transit" });
   };
 
   return (
@@ -53,19 +51,13 @@ export default function MoveScreen() {
       </View>
 
       {!hydrated ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>일정을 불러오는 중입니다</Text>
-        </View>
+        <View style={styles.emptyState}><Text style={styles.emptyTitle}>일정을 불러오는 중입니다</Text></View>
       ) : !target ? (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIcon}>
-            <MaterialCommunityIcons color={colors.primary} name="map-marker-plus-outline" size={30} />
-          </View>
+          <View style={styles.emptyIcon}><MaterialCommunityIcons color={colors.primary} name="map-marker-plus-outline" size={30} /></View>
           <Text style={styles.emptyTitle}>길찾기에 사용할 일정이 없습니다</Text>
           <Text style={styles.emptyDescription}>일정 탭에서 목적지를 먼저 등록해 주세요.</Text>
-          <Pressable onPress={() => router.push("/schedule")} style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>일정 등록하러 가기</Text>
-          </Pressable>
+          <Pressable onPress={() => router.push("/schedule")} style={styles.primaryButton}><Text style={styles.primaryButtonText}>일정 등록하러 가기</Text></Pressable>
         </View>
       ) : (
         <>
@@ -100,33 +92,32 @@ export default function MoveScreen() {
 
           <View style={styles.routeCard}>
             <View style={styles.routeRow}>
-              <View style={styles.railColumn}>
-                <View style={[styles.railDot, { borderColor: colors.teal }]} />
-                <View style={styles.railLine} />
-              </View>
+              <View style={styles.railColumn}><View style={[styles.railDot, { borderColor: colors.teal }]} /><View style={styles.railLine} /></View>
               <View style={styles.routeInfo}>
                 <Text style={styles.routeLabel}>{previous ? "이전 일정에서 출발" : "선택 지역에서 출발"}</Text>
                 <Text style={styles.station}>{originLabel}</Text>
+                {previous?.placeAddress ? <Text style={styles.address}>{previous.placeAddress}</Text> : null}
               </View>
             </View>
             <View style={styles.routeRow}>
-              <View style={styles.railColumn}>
-                <View style={[styles.railDot, { borderColor: colors.primary }]} />
-              </View>
+              <View style={styles.railColumn}><View style={[styles.railDot, { borderColor: colors.primary }]} /></View>
               <View style={styles.routeInfo}>
                 <Text style={styles.routeLabel}>등록한 일정 목적지</Text>
                 <Text style={styles.station}>{destinationLabel}</Text>
+                {target.placeAddress ? <Text style={styles.address}>{target.placeAddress}</Text> : null}
                 {target.detail ? <Text style={styles.routeDetail}>{target.detail}</Text> : null}
-                <Text numberOfLines={1} style={styles.queryText}>{destinationQuery}</Text>
+                {target.placeLatitude !== undefined && target.placeLongitude !== undefined ? (
+                  <View style={styles.coordinateBadge}>
+                    <MaterialCommunityIcons color={colors.teal} name="crosshairs-gps" size={13} />
+                    <Text style={styles.coordinateText}>정확한 장소 좌표 저장됨</Text>
+                  </View>
+                ) : null}
               </View>
             </View>
           </View>
 
           <View style={styles.actionRow}>
-            <Pressable
-              style={styles.secondaryButton}
-              onPress={() => void openGoogleMapsSearch(destinationQuery)}
-            >
+            <Pressable style={styles.secondaryButton} onPress={() => void openGoogleMapsSearch(destinationQuery)}>
               <MaterialCommunityIcons color={colors.primary} name="map-search-outline" size={18} />
               <Text style={styles.secondaryButtonText}>목적지 지도</Text>
             </Pressable>
@@ -136,9 +127,7 @@ export default function MoveScreen() {
             </Pressable>
           </View>
 
-          <Text style={styles.externalNote}>
-            이동시간과 환승 정보는 임의로 표시하지 않고 Google Maps의 최신 경로 결과에서 확인합니다.
-          </Text>
+          <Text style={styles.externalNote}>Google Places에서 선택한 좌표가 있으면 장소명 검색보다 좌표를 우선해 길찾기에 사용합니다.</Text>
         </>
       )}
 
@@ -151,13 +140,8 @@ export default function MoveScreen() {
         <View style={styles.lineGrid}>
           {supportedRealtimeLines.map((line) => (
             <View key={`${line.operator}-${line.code}`} style={styles.liveLine}>
-              <View style={[styles.lineCode, { backgroundColor: line.color }]}>
-                <Text style={styles.lineCodeText}>{line.code}</Text>
-              </View>
-              <View>
-                <Text style={styles.liveLineName}>{line.name}</Text>
-                <Text style={styles.operator}>{line.operator}</Text>
-              </View>
+              <View style={[styles.lineCode, { backgroundColor: line.color }]}><Text style={styles.lineCodeText}>{line.code}</Text></View>
+              <View><Text style={styles.liveLineName}>{line.name}</Text><Text style={styles.operator}>{line.operator}</Text></View>
             </View>
           ))}
         </View>
@@ -165,9 +149,7 @@ export default function MoveScreen() {
       </View>
 
       <GalaxyTransitLiveCard />
-      <View style={styles.regionNote}>
-        <Text style={styles.regionNoteText}>현재 선택 지역 · {region.label}</Text>
-      </View>
+      <View style={styles.regionNote}><Text style={styles.regionNoteText}>현재 선택 지역 · {region.label}</Text></View>
     </Screen>
   );
 }
@@ -196,8 +178,10 @@ const styles = StyleSheet.create({
   routeInfo: { flex: 1, gap: 4, paddingBottom: 10 },
   routeLabel: { color: colors.textMuted, fontSize: 10, fontWeight: "800" },
   station: { color: colors.text, fontSize: 15, fontWeight: "900" },
+  address: { color: colors.textMuted, fontSize: 10, lineHeight: 15 },
   routeDetail: { color: colors.textMuted, fontSize: 11, lineHeight: 17 },
-  queryText: { color: colors.textMuted, fontSize: 9, marginTop: 2 },
+  coordinateBadge: { alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.tealSoft, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 5, marginTop: 2 },
+  coordinateText: { color: colors.teal, fontSize: 9, fontWeight: "900" },
   actionRow: { flexDirection: "row", gap: 8, marginTop: 12 },
   secondaryButton: { flex: 1, height: 46, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" },
   secondaryButtonText: { color: colors.primary, fontSize: 12, fontWeight: "900" },

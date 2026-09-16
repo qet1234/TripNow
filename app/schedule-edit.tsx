@@ -7,6 +7,11 @@ import { useSchedule } from "@/src/context/ScheduleContext";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { getHomeRegion, homeRegions } from "@/src/data/homeRegions";
 import { getJapanRegion } from "@/src/data/japanRegions";
+import {
+  autocompleteJapanPlaces,
+  fetchJapanPlaceDetails,
+  type PlaceSuggestion,
+} from "@/src/services/places";
 import { openGoogleMapsSearch } from "@/src/services/navigation";
 import { colors, radius } from "@/src/theme";
 
@@ -33,6 +38,15 @@ export default function ScheduleEditScreen() {
   const [title, setTitle] = useState("");
   const [placeQuery, setPlaceQuery] = useState("");
   const [detail, setDetail] = useState("");
+  const [placeId, setPlaceId] = useState("");
+  const [placeAddress, setPlaceAddress] = useState("");
+  const [placeLatitude, setPlaceLatitude] = useState<number | undefined>();
+  const [placeLongitude, setPlaceLongitude] = useState<number | undefined>();
+  const [googleMapsUri, setGoogleMapsUri] = useState("");
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [selecting, setSelecting] = useState(false);
+  const [searchError, setSearchError] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -44,17 +58,92 @@ export default function ScheduleEditScreen() {
     setTitle(existing.title);
     setPlaceQuery(existing.placeQuery ?? "");
     setDetail(existing.detail);
+    setPlaceId(existing.placeId ?? "");
+    setPlaceAddress(existing.placeAddress ?? "");
+    setPlaceLatitude(existing.placeLatitude);
+    setPlaceLongitude(existing.placeLongitude);
+    setGoogleMapsUri(existing.googleMapsUri ?? "");
   }, [existing?.id]);
 
   const region = useMemo(() => getHomeRegion(regionId), [regionId]);
   const japanRegion = useMemo(() => getJapanRegion(regionId), [regionId]);
   const isEditing = Boolean(existing);
   const mapSearchQuery = useMemo(() => {
-    const custom = placeQuery.trim();
-    if (custom) return custom;
+    if (placeLatitude !== undefined && placeLongitude !== undefined) {
+      return `${placeLatitude},${placeLongitude}`;
+    }
+    if (placeAddress.trim()) return placeAddress.trim();
+    if (placeQuery.trim()) return placeQuery.trim();
     const name = title.trim();
     return name ? `${name} ${japanRegion.city} Japan` : "";
-  }, [japanRegion.city, placeQuery, title]);
+  }, [japanRegion.city, placeAddress, placeLatitude, placeLongitude, placeQuery, title]);
+
+  useEffect(() => {
+    const query = placeQuery.trim();
+    if (query.length < 2 || placeId) {
+      setSuggestions([]);
+      setSearching(false);
+      setSearchError("");
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      setSearching(true);
+      setSearchError("");
+      void autocompleteJapanPlaces(query, regionId)
+        .then((items) => {
+          if (!cancelled) setSuggestions(items);
+        })
+        .catch((requestError: unknown) => {
+          if (!cancelled) {
+            setSuggestions([]);
+            setSearchError(requestError instanceof Error ? requestError.message : "장소 검색에 실패했습니다.");
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setSearching(false);
+        });
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [placeId, placeQuery, regionId]);
+
+  const clearSelectedPlace = () => {
+    setPlaceId("");
+    setPlaceAddress("");
+    setPlaceLatitude(undefined);
+    setPlaceLongitude(undefined);
+    setGoogleMapsUri("");
+  };
+
+  const changePlaceQuery = (value: string) => {
+    setPlaceQuery(value);
+    clearSelectedPlace();
+  };
+
+  const chooseSuggestion = async (suggestion: PlaceSuggestion) => {
+    setSelecting(true);
+    setSearchError("");
+    try {
+      const place = await fetchJapanPlaceDetails(suggestion.placeId);
+      setPlaceId(place.placeId);
+      setPlaceQuery(place.name || suggestion.mainText || suggestion.text);
+      setPlaceAddress(place.address);
+      setPlaceLatitude(place.latitude);
+      setPlaceLongitude(place.longitude);
+      setGoogleMapsUri(place.googleMapsUri ?? "");
+      setSuggestions([]);
+      if (!title.trim()) setTitle(place.name || suggestion.mainText || suggestion.text);
+    } catch (requestError) {
+      setSearchError(requestError instanceof Error ? requestError.message : "장소 상세정보를 불러오지 못했습니다.");
+    } finally {
+      setSelecting(false);
+    }
+  };
 
   const previewPlace = () => {
     if (!mapSearchQuery) {
@@ -91,6 +180,11 @@ export default function ScheduleEditScreen() {
       title: normalizedTitle,
       detail: detail.trim(),
       placeQuery: placeQuery.trim(),
+      placeId,
+      placeAddress,
+      placeLatitude,
+      placeLongitude,
+      googleMapsUri,
     };
 
     if (existing) {
@@ -126,7 +220,11 @@ export default function ScheduleEditScreen() {
           return (
             <Pressable
               key={item.regionId}
-              onPress={() => setRegionId(item.regionId)}
+              onPress={() => {
+                setRegionId(item.regionId);
+                clearSelectedPlace();
+                setSuggestions([]);
+              }}
               style={[
                 styles.regionChip,
                 active && { backgroundColor: item.accent, borderColor: item.accent },
@@ -160,63 +258,73 @@ export default function ScheduleEditScreen() {
       <View style={styles.twoColumn}>
         <View style={styles.flexField}>
           <Text style={styles.label}>날짜</Text>
-          <TextInput
-            autoCapitalize="none"
-            onChangeText={setDate}
-            placeholder="2026-09-16"
-            placeholderTextColor="#9AA4A8"
-            style={styles.input}
-            value={date}
-          />
+          <TextInput autoCapitalize="none" onChangeText={setDate} placeholder="2026-09-16" placeholderTextColor="#9AA4A8" style={styles.input} value={date} />
         </View>
         <View style={styles.timeField}>
           <Text style={styles.label}>시간</Text>
-          <TextInput
-            autoCapitalize="none"
-            onChangeText={setTime}
-            placeholder="10:00"
-            placeholderTextColor="#9AA4A8"
-            style={styles.input}
-            value={time}
-          />
+          <TextInput autoCapitalize="none" onChangeText={setTime} placeholder="10:00" placeholderTextColor="#9AA4A8" style={styles.input} value={time} />
         </View>
       </View>
 
       <Text style={styles.label}>장소명 · 일정 제목</Text>
-      <TextInput
-        onChangeText={setTitle}
-        placeholder="예: 센소지"
-        placeholderTextColor="#9AA4A8"
-        style={styles.input}
-        value={title}
-      />
+      <TextInput onChangeText={setTitle} placeholder="예: 센소지" placeholderTextColor="#9AA4A8" style={styles.input} value={title} />
 
-      <Text style={styles.label}>지도 검색어 · 주소</Text>
-      <TextInput
-        onChangeText={setPlaceQuery}
-        placeholder="선택 입력 · 예: Senso-ji, Asakusa"
-        placeholderTextColor="#9AA4A8"
-        style={styles.input}
-        value={placeQuery}
-      />
-      <Text style={styles.helperText}>
-        비워두면 장소명과 {japanRegion.city} 지역명을 조합해 Google Maps에서 검색합니다.
-      </Text>
+      <Text style={styles.label}>일본 장소 검색</Text>
+      <View style={[styles.placeSearchBox, placeId ? { borderColor: region.accent } : null]}>
+        <MaterialCommunityIcons color={placeId ? region.accent : colors.textMuted} name={placeId ? "map-marker-check" : "magnify"} size={20} />
+        <TextInput
+          autoCapitalize="none"
+          onChangeText={changePlaceQuery}
+          placeholder={`${japanRegion.city} 장소명을 검색하세요`}
+          placeholderTextColor="#9AA4A8"
+          style={styles.placeInput}
+          value={placeQuery}
+        />
+        {searching || selecting ? <Text style={styles.searchingText}>검색중</Text> : null}
+      </View>
+
+      {suggestions.length > 0 ? (
+        <View style={styles.suggestionBox}>
+          {suggestions.map((suggestion, index) => (
+            <Pressable
+              key={suggestion.placeId}
+              onPress={() => void chooseSuggestion(suggestion)}
+              style={[styles.suggestionItem, index < suggestions.length - 1 && styles.suggestionDivider]}
+            >
+              <MaterialCommunityIcons color={region.accent} name="map-marker-outline" size={19} />
+              <View style={styles.suggestionCopy}>
+                <Text numberOfLines={1} style={styles.suggestionTitle}>{suggestion.mainText || suggestion.text}</Text>
+                {suggestion.secondaryText ? <Text numberOfLines={1} style={styles.suggestionMeta}>{suggestion.secondaryText}</Text> : null}
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+
+      {searchError ? <Text style={styles.searchError}>{searchError}</Text> : null}
+
+      {placeId ? (
+        <View style={[styles.selectedPlace, { backgroundColor: region.soft }]}> 
+          <MaterialCommunityIcons color={region.accent} name="check-circle" size={18} />
+          <View style={styles.selectedCopy}>
+            <Text style={styles.selectedTitle}>Google Places 장소 선택 완료</Text>
+            <Text numberOfLines={2} style={styles.selectedAddress}>{placeAddress}</Text>
+            {placeLatitude !== undefined && placeLongitude !== undefined ? (
+              <Text style={styles.coordinateText}>{placeLatitude.toFixed(6)}, {placeLongitude.toFixed(6)}</Text>
+            ) : null}
+          </View>
+        </View>
+      ) : (
+        <Text style={styles.helperText}>2글자 이상 입력하면 선택 지역 주변의 일본 장소를 자동완성합니다.</Text>
+      )}
+
       <Pressable onPress={previewPlace} style={[styles.mapButton, { borderColor: region.accent }]}> 
         <MaterialCommunityIcons color={region.accent} name="map-search-outline" size={19} />
         <Text style={[styles.mapButtonText, { color: region.accent }]}>Google Maps에서 장소 확인</Text>
       </Pressable>
 
       <Text style={styles.label}>메모</Text>
-      <TextInput
-        multiline
-        onChangeText={setDetail}
-        placeholder="예: 나카미세 거리 산책 후 점심"
-        placeholderTextColor="#9AA4A8"
-        style={[styles.input, styles.memoInput]}
-        textAlignVertical="top"
-        value={detail}
-      />
+      <TextInput multiline onChangeText={setDetail} placeholder="예: 나카미세 거리 산책 후 점심" placeholderTextColor="#9AA4A8" style={[styles.input, styles.memoInput]} textAlignVertical="top" value={detail} />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -255,7 +363,22 @@ const styles = StyleSheet.create({
   timeField: { width: 112 },
   input: { minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, color: colors.text, fontSize: 14, fontWeight: "700", paddingHorizontal: 13, paddingVertical: 11 },
   memoInput: { minHeight: 112 },
+  placeSearchBox: { minHeight: 50, borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, flexDirection: "row", alignItems: "center", paddingHorizontal: 12, gap: 8 },
+  placeInput: { flex: 1, minWidth: 0, color: colors.text, fontSize: 14, fontWeight: "700", paddingVertical: 11 },
+  searchingText: { color: colors.textMuted, fontSize: 10, fontWeight: "800" },
+  suggestionBox: { borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, marginTop: 6, overflow: "hidden" },
+  suggestionItem: { minHeight: 58, flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 12, paddingVertical: 9 },
+  suggestionDivider: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  suggestionCopy: { flex: 1, minWidth: 0 },
+  suggestionTitle: { color: colors.text, fontSize: 13, fontWeight: "900" },
+  suggestionMeta: { color: colors.textMuted, fontSize: 10, fontWeight: "600", marginTop: 3 },
+  searchError: { color: "#C43C35", fontSize: 11, lineHeight: 16, fontWeight: "700", marginTop: 7 },
   helperText: { color: colors.textMuted, fontSize: 10, lineHeight: 15, fontWeight: "600", marginTop: 6 },
+  selectedPlace: { borderRadius: 13, marginTop: 7, padding: 11, flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  selectedCopy: { flex: 1 },
+  selectedTitle: { color: colors.text, fontSize: 11, fontWeight: "900" },
+  selectedAddress: { color: colors.textMuted, fontSize: 10, lineHeight: 15, marginTop: 3 },
+  coordinateText: { color: colors.textMuted, fontSize: 9, marginTop: 3 },
   mapButton: { height: 44, borderRadius: radius.pill, borderWidth: 1, backgroundColor: colors.surface, marginTop: 9, flexDirection: "row", gap: 7, alignItems: "center", justifyContent: "center" },
   mapButtonText: { fontSize: 12, fontWeight: "900" },
   error: { color: "#C43C35", fontSize: 12, fontWeight: "800", marginTop: 12 },
