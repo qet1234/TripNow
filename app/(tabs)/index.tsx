@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { Screen } from "@/src/components/Screen";
+import { useSchedule } from "@/src/context/ScheduleContext";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { getHomeRegion, homeRegions } from "@/src/data/homeRegions";
 import { useResponsiveLayout } from "@/src/hooks/useResponsiveLayout";
@@ -32,8 +33,13 @@ const quickActions: ReadonlyArray<{
 export default function HomeScreen() {
   const router = useRouter();
   const { selectedRegionId, setSelectedRegionId } = useTravelMode();
+  const { getSchedulesByRegion } = useSchedule();
   const { isCompactWidth, isLandscape, isLargeScreen } = useResponsiveLayout();
   const region = getHomeRegion(selectedRegionId);
+  const regionSchedules = getSchedulesByRegion(selectedRegionId);
+  const homeDay = regionSchedules[0]?.day ?? 1;
+  const homeSchedules = regionSchedules.filter((item) => item.day === homeDay).slice(0, 2);
+  const nextSchedule = homeSchedules[0];
   const heroHeight = isCompactWidth ? 120 : isLargeScreen ? 180 : isLandscape ? 150 : 137;
 
   return (
@@ -122,7 +128,7 @@ export default function HomeScreen() {
           >
             오늘의 여행
           </Text>
-          <Text style={styles.tripDay}>여행 2일차</Text>
+          <Text style={styles.tripDay}>여행 {homeDay}일차</Text>
         </View>
         <View style={[styles.titleDecoration, isCompactWidth && styles.titleDecorationCompact]}>
           <Text style={[styles.eyebrow, { color: region.accent }]}>{region.eyebrow}</Text>
@@ -165,8 +171,14 @@ export default function HomeScreen() {
             <MaterialCommunityIcons color={region.accent} name="calendar-blank-outline" size={17} />
             <Text style={[styles.ticketLabel, { color: region.accent }]}>다음 일정</Text>
           </View>
-          <Text numberOfLines={1} style={styles.ticketTitle}>{region.nextTitle}</Text>
-          <Text numberOfLines={1} style={styles.ticketMeta}>{region.nextMeta}</Text>
+          <Text numberOfLines={1} style={styles.ticketTitle}>
+            {nextSchedule?.title ?? "일정을 추가해 주세요"}
+          </Text>
+          <Text numberOfLines={1} style={styles.ticketMeta}>
+            {nextSchedule
+              ? `${nextSchedule.time} · ${nextSchedule.detail || nextSchedule.date}`
+              : "일정 탭에서 여행 계획을 등록해 보세요"}
+          </Text>
         </View>
         {!isCompactWidth ? (
           <View style={styles.ticketWatermark}>
@@ -174,14 +186,14 @@ export default function HomeScreen() {
           </View>
         ) : null}
         <Pressable
-          onPress={() => router.push("/move")}
+          onPress={() => router.push("/schedule")}
           style={[
             styles.routeButton,
             isCompactWidth && styles.routeButtonCompact,
             { backgroundColor: region.accentDark },
           ]}
         >
-          <Text style={styles.routeButtonText}>경로 보기</Text>
+          <Text style={styles.routeButtonText}>일정 보기</Text>
           <MaterialCommunityIcons color="#FFFFFF" name="arrow-right" size={19} />
         </Pressable>
       </View>
@@ -218,30 +230,39 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.scheduleList}>
-        <View style={[styles.scheduleLine, { backgroundColor: region.softStrong }]} />
-        {region.schedule.map((item, index) => (
-          <Pressable
-            key={item.time}
-            onPress={() => router.push("/schedule")}
-            style={styles.scheduleRow}
-          >
-            <View
-              style={[
-                styles.scheduleDot,
-                {
-                  backgroundColor: index === 0 ? region.accent : "#A8BAB4",
-                  borderColor: index === 0 ? region.softStrong : "#EDF2F0",
-                },
-              ]}
-            />
-            <Text style={styles.scheduleTime}>{item.time}</Text>
-            <View style={styles.scheduleCopy}>
-              <Text numberOfLines={1} style={styles.scheduleTitle}>{item.title}</Text>
-              <Text numberOfLines={1} style={styles.scheduleDetail}>{item.detail}</Text>
-            </View>
-            <MaterialCommunityIcons color="#4A6068" name="chevron-right" size={22} />
+        {homeSchedules.length > 1 ? (
+          <View style={[styles.scheduleLine, { backgroundColor: region.softStrong }]} />
+        ) : null}
+        {homeSchedules.length === 0 ? (
+          <Pressable onPress={() => router.push("/schedule")} style={styles.emptySchedule}>
+            <MaterialCommunityIcons color={region.accent} name="calendar-plus" size={20} />
+            <Text style={styles.emptyScheduleText}>등록된 일정이 없습니다. 일정을 추가해 보세요.</Text>
           </Pressable>
-        ))}
+        ) : (
+          homeSchedules.map((item, index) => (
+            <Pressable
+              key={item.id}
+              onPress={() => router.push(`/schedule-edit?id=${encodeURIComponent(item.id)}`)}
+              style={styles.scheduleRow}
+            >
+              <View
+                style={[
+                  styles.scheduleDot,
+                  {
+                    backgroundColor: index === 0 ? region.accent : "#A8BAB4",
+                    borderColor: index === 0 ? region.softStrong : "#EDF2F0",
+                  },
+                ]}
+              />
+              <Text style={styles.scheduleTime}>{item.time}</Text>
+              <View style={styles.scheduleCopy}>
+                <Text numberOfLines={1} style={styles.scheduleTitle}>{item.title}</Text>
+                <Text numberOfLines={1} style={styles.scheduleDetail}>{item.detail || item.date}</Text>
+              </View>
+              <MaterialCommunityIcons color="#4A6068" name="chevron-right" size={22} />
+            </Pressable>
+          ))
+        )}
       </View>
 
       <Pressable
@@ -333,6 +354,8 @@ const styles = StyleSheet.create({
   scheduleCopy: { flex: 1, minWidth: 0 },
   scheduleTitle: { color: "#10242A", fontSize: 14, fontWeight: "900" },
   scheduleDetail: { color: "#718086", fontSize: 10, fontWeight: "600", marginTop: 2 },
+  emptySchedule: { minHeight: 54, borderRadius: 13, borderWidth: 1, borderColor: "#E1E7E5", backgroundColor: "rgba(255,255,255,0.72)", flexDirection: "row", alignItems: "center", gap: 9, paddingHorizontal: 13 },
+  emptyScheduleText: { flex: 1, color: "#68777C", fontSize: 11, fontWeight: "700" },
   budgetCard: { minHeight: 52, marginTop: 9, borderRadius: 15, flexDirection: "row", alignItems: "center", paddingHorizontal: 12, gap: 9 },
   budgetIcon: { width: 34, height: 34, borderRadius: 11, alignItems: "center", justifyContent: "center" },
   budgetLabel: { color: "#33484F", fontSize: 11, fontWeight: "800" },
