@@ -13,6 +13,7 @@ import {
 import { Screen } from "@/src/components/Screen";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { getHomeRegion, homeRegions } from "@/src/data/homeRegions";
+import { useResponsiveLayout } from "@/src/hooks/useResponsiveLayout";
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
@@ -31,15 +32,31 @@ const quickActions: ReadonlyArray<{
 export default function HomeScreen() {
   const router = useRouter();
   const { selectedRegionId, setSelectedRegionId } = useTravelMode();
+  const { isCompactWidth, isLandscape, isLargeScreen } = useResponsiveLayout();
   const region = getHomeRegion(selectedRegionId);
+  const heroHeight = isCompactWidth ? 120 : isLargeScreen ? 180 : isLandscape ? 150 : 137;
 
   return (
     <Screen>
-      <View style={[styles.themeWash, { backgroundColor: region.soft }]} />
+      <View
+        style={[
+          styles.themeWash,
+          isLargeScreen && styles.themeWashLarge,
+          { backgroundColor: region.soft },
+        ]}
+      />
 
       <View style={styles.header}>
         <Text style={[styles.brand, { color: region.accentDark }]}>트립나우</Text>
-        <Image resizeMode="contain" source={region.artImage} style={styles.headerArt} />
+        <Image
+          resizeMode="contain"
+          source={region.artImage}
+          style={[
+            styles.headerArt,
+            isCompactWidth && styles.headerArtCompact,
+            isLargeScreen && styles.headerArtLarge,
+          ]}
+        />
         <Pressable
           accessibilityLabel="알림 열기"
           hitSlop={10}
@@ -62,6 +79,7 @@ export default function HomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
+              hitSlop={7}
               key={item.id}
               onPress={() => setSelectedRegionId(item.regionId)}
               style={[
@@ -77,13 +95,36 @@ export default function HomeScreen() {
         })}
       </ScrollView>
 
-      <View style={styles.titleBlock}>
+      <View
+        style={[
+          styles.titleBlock,
+          isCompactWidth && styles.titleBlockCompact,
+          isLargeScreen && styles.titleBlockLarge,
+        ]}
+      >
         <View>
-          <Text style={[styles.cityTitle, { color: region.accentDark }]}>{region.name},</Text>
-          <Text style={styles.headline}>오늘의 여행</Text>
+          <Text
+            style={[
+              styles.cityTitle,
+              isCompactWidth && styles.titleCompact,
+              isLargeScreen && styles.titleLarge,
+              { color: region.accentDark },
+            ]}
+          >
+            {region.name},
+          </Text>
+          <Text
+            style={[
+              styles.headline,
+              isCompactWidth && styles.titleCompact,
+              isLargeScreen && styles.titleLarge,
+            ]}
+          >
+            오늘의 여행
+          </Text>
           <Text style={styles.tripDay}>여행 2일차</Text>
         </View>
-        <View style={styles.titleDecoration}>
+        <View style={[styles.titleDecoration, isCompactWidth && styles.titleDecorationCompact]}>
           <Text style={[styles.eyebrow, { color: region.accent }]}>{region.eyebrow}</Text>
         </View>
       </View>
@@ -100,7 +141,7 @@ export default function HomeScreen() {
         imageStyle={styles.heroImage}
         resizeMode="cover"
         source={region.heroImage}
-        style={styles.hero}
+        style={[styles.hero, { height: heroHeight }]}
       >
         <View style={styles.heroShade}>
           <Text style={styles.heroCity}>{region.englishName}</Text>
@@ -108,7 +149,14 @@ export default function HomeScreen() {
         </View>
       </ImageBackground>
 
-      <View style={[styles.ticket, { borderColor: region.softStrong }]}>
+      <View
+        style={[
+          styles.ticket,
+          isCompactWidth && styles.ticketCompact,
+          isLargeScreen && styles.ticketLarge,
+          { borderColor: region.softStrong },
+        ]}
+      >
         <View style={[styles.ticketBand, { backgroundColor: region.accent }]} />
         <View style={[styles.notch, styles.notchLeft]} />
         <View style={[styles.notch, styles.notchRight]} />
@@ -120,19 +168,25 @@ export default function HomeScreen() {
           <Text numberOfLines={1} style={styles.ticketTitle}>{region.nextTitle}</Text>
           <Text numberOfLines={1} style={styles.ticketMeta}>{region.nextMeta}</Text>
         </View>
-        <View style={styles.ticketWatermark}>
-          <Image resizeMode="contain" source={region.artImage} style={styles.ticketArt} />
-        </View>
+        {!isCompactWidth ? (
+          <View style={styles.ticketWatermark}>
+            <Image resizeMode="contain" source={region.artImage} style={styles.ticketArt} />
+          </View>
+        ) : null}
         <Pressable
           onPress={() => router.push("/move")}
-          style={[styles.routeButton, { backgroundColor: region.accentDark }]}
+          style={[
+            styles.routeButton,
+            isCompactWidth && styles.routeButtonCompact,
+            { backgroundColor: region.accentDark },
+          ]}
         >
           <Text style={styles.routeButtonText}>경로 보기</Text>
           <MaterialCommunityIcons color="#FFFFFF" name="arrow-right" size={19} />
         </Pressable>
       </View>
 
-      <View style={styles.quickGrid}>
+      <View style={[styles.quickGrid, isCompactWidth && styles.quickGridCompact]}>
         {quickActions.map((action) => {
           const iconColor = action.warm ? "#D58A22" : region.accent;
           const tileColor = action.warm ? "#FFF4DF" : region.soft;
@@ -140,7 +194,11 @@ export default function HomeScreen() {
             <Pressable
               key={action.label}
               onPress={() => router.push(action.route)}
-              style={styles.quickAction}
+              style={[
+                styles.quickAction,
+                isCompactWidth && styles.quickActionCompact,
+                isLargeScreen && styles.quickActionLarge,
+              ]}
             >
               <View style={[styles.quickIcon, { backgroundColor: tileColor }]}>
                 <MaterialCommunityIcons color={iconColor} name={action.icon} size={28} />
@@ -195,8 +253,12 @@ export default function HomeScreen() {
         </View>
         <Text style={styles.budgetLabel}>오늘 남은 예산</Text>
         <Text style={[styles.budgetValue, { color: region.accentDark }]}>¥8,500</Text>
-        <View style={[styles.budgetDivider, { backgroundColor: region.accent }]} />
-        <Text style={styles.budgetNote}>입력한 지출 기준</Text>
+        {!isCompactWidth ? (
+          <>
+            <View style={[styles.budgetDivider, { backgroundColor: region.accent }]} />
+            <Text style={styles.budgetNote}>입력한 지출 기준</Text>
+          </>
+        ) : null}
       </Pressable>
     </Screen>
   );
@@ -204,9 +266,12 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   themeWash: { position: "absolute", top: -40, left: -100, right: -100, height: 250, opacity: 0.55 },
+  themeWashLarge: { height: 320 },
   header: { minHeight: 43, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", overflow: "visible" },
   brand: { paddingTop: 3, fontSize: 24, fontWeight: "900", letterSpacing: -1.2, zIndex: 2 },
   headerArt: { position: "absolute", width: 142, height: 82, top: -9, right: 30, opacity: 0.93 },
+  headerArtCompact: { width: 118, height: 72, right: 24 },
+  headerArtLarge: { width: 162, height: 94, right: 48 },
   bellButton: { width: 38, height: 38, alignItems: "center", justifyContent: "center", zIndex: 3 },
   alertDot: { position: "absolute", width: 8, height: 8, borderRadius: 4, right: 5, top: 5 },
   regionTabs: { flexGrow: 1, justifyContent: "space-between", gap: 6, paddingTop: 2, paddingBottom: 9, paddingRight: 0 },
@@ -214,20 +279,27 @@ const styles = StyleSheet.create({
   regionTabText: { color: "#425159", fontSize: 11, fontWeight: "800" },
   regionTabTextActive: { color: "#FFFFFF" },
   titleBlock: { minHeight: 83, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", paddingTop: 0 },
+  titleBlockCompact: { minHeight: 76 },
+  titleBlockLarge: { minHeight: 94 },
   cityTitle: { fontSize: 27, lineHeight: 29, fontWeight: "900", letterSpacing: -1.4 },
   headline: { color: "#10242A", fontSize: 27, lineHeight: 29, fontWeight: "900", letterSpacing: -1.3 },
+  titleCompact: { fontSize: 24, lineHeight: 26 },
+  titleLarge: { fontSize: 30, lineHeight: 33 },
   tripDay: { color: "#5E6B70", fontSize: 11, fontWeight: "700", marginTop: 5 },
   titleDecoration: { width: 104, alignItems: "flex-end", justifyContent: "flex-end", paddingTop: 36 },
+  titleDecorationCompact: { width: 78, paddingTop: 31 },
   eyebrow: { maxWidth: 100, fontSize: 8, lineHeight: 12, fontWeight: "800", letterSpacing: 2, textAlign: "right" },
   search: { minHeight: 43, borderRadius: 13, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#D8DEDC", flexDirection: "row", alignItems: "center", paddingHorizontal: 13, gap: 9, shadowColor: "#24352E", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 10, elevation: 2 },
   searchText: { flex: 1, color: "#6F7B80", fontSize: 14, fontWeight: "600" },
   searchDivider: { width: 1, height: 24, backgroundColor: "#E3E8E6" },
-  hero: { width: "100%", height: 137, marginTop: 10, borderRadius: 17, overflow: "hidden", justifyContent: "flex-end" },
+  hero: { width: "100%", marginTop: 10, borderRadius: 17, overflow: "hidden", justifyContent: "flex-end" },
   heroImage: { width: "100%", height: "100%", borderRadius: 17 },
   heroShade: { flex: 1, justifyContent: "flex-end", borderRadius: 17, paddingHorizontal: 15, paddingBottom: 12, backgroundColor: "rgba(7,24,25,0.18)" },
   heroCity: { color: "#FFFFFF", fontSize: 18, fontWeight: "900", letterSpacing: 4 },
   heroDescription: { color: "#FFFFFF", fontSize: 11, fontWeight: "700", marginTop: 2 },
   ticket: { minHeight: 84, marginTop: 9, borderWidth: 1, borderRadius: 15, backgroundColor: "#FFFFFF", flexDirection: "row", alignItems: "center", overflow: "hidden", shadowColor: "#1D2F28", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3 },
+  ticketCompact: { minHeight: 78 },
+  ticketLarge: { minHeight: 96 },
   ticketBand: { width: 7, alignSelf: "stretch" },
   notch: { position: "absolute", width: 16, height: 16, borderRadius: 8, backgroundColor: "#F7F7F9", top: 34 },
   notchLeft: { left: -10 },
@@ -240,9 +312,13 @@ const styles = StyleSheet.create({
   ticketWatermark: { width: 76, height: 78, alignItems: "center", justifyContent: "center", overflow: "hidden", opacity: 0.9 },
   ticketArt: { width: 84, height: 90 },
   routeButton: { height: 44, borderRadius: 14, paddingHorizontal: 11, marginHorizontal: 9, flexDirection: "row", gap: 3, alignItems: "center", justifyContent: "center", zIndex: 2 },
+  routeButtonCompact: { paddingHorizontal: 8, marginHorizontal: 6 },
   routeButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
   quickGrid: { flexDirection: "row", gap: 7, marginTop: 9 },
+  quickGridCompact: { gap: 5 },
   quickAction: { flex: 1, minWidth: 0, height: 84, borderRadius: 15, backgroundColor: "rgba(255,255,255,0.9)", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#EDF0EF" },
+  quickActionCompact: { height: 78 },
+  quickActionLarge: { height: 96 },
   quickIcon: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
   quickLabel: { color: "#263B42", fontSize: 10, fontWeight: "800", marginTop: 5 },
   sectionHeading: { marginTop: 13, marginBottom: 4, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
