@@ -5,7 +5,7 @@ import type { ImageSourcePropType } from "react-native";
 export type RegionIconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
 export type HomeRegionTheme = {
-  id: "tokyo" | "osaka" | "kyoto" | "fukuoka";
+  id: "tokyo" | "osaka" | "kyoto" | "fukuoka" | "sapporo" | "nagoya";
   regionId: string;
   name: string;
   englishName: string;
@@ -109,6 +109,48 @@ export const homeRegions: HomeRegionTheme[] = [
     schedule: [
       { time: "11:00", title: "오호리 공원", detail: "호수 산책로 · 일본 정원" },
       { time: "14:00", title: "모모치 해변", detail: "후쿠오카 타워 · 해변 산책" },
+    ],
+  },
+  {
+    id: "sapporo",
+    regionId: "sapporo-center",
+    name: "삿포로",
+    englishName: "SAPPORO",
+    eyebrow: "SAPPORO · JAPAN · TRAVEL",
+    accent: "#167DB3",
+    accentDark: "#0A557E",
+    soft: "#ECF7FC",
+    softStrong: "#D5ECF7",
+    landmarkIcon: "clock-outline",
+    heroImage: require("../../assets/regions/sapporo-hero.jpg"),
+    artImage: require("../../assets/regions/sapporo-art.png"),
+    description: "눈과 야경이 어우러진 북쪽 도시",
+    nextTitle: "삿포로 맥주박물관",
+    nextMeta: "11:00 · 삿포로 맥주박물관",
+    schedule: [
+      { time: "11:00", title: "삿포로 맥주박물관", detail: "박물관 견학 · 맥주 문화" },
+      { time: "15:00", title: "오도리 공원", detail: "삿포로 TV타워 · 설경 산책" },
+    ],
+  },
+  {
+    id: "nagoya",
+    regionId: "nagoya-sakae",
+    name: "나고야",
+    englishName: "NAGOYA",
+    eyebrow: "NAGOYA · JAPAN · TRAVEL",
+    accent: "#B77A08",
+    accentDark: "#6B4300",
+    soft: "#FFF8E8",
+    softStrong: "#F7E8BE",
+    landmarkIcon: "castle",
+    heroImage: require("../../assets/regions/nagoya-hero.jpg"),
+    artImage: require("../../assets/regions/nagoya-art.png"),
+    description: "역사와 현대가 만나는 중심 도시",
+    nextTitle: "나고야성 방문",
+    nextMeta: "11:00 · 나고야성",
+    schedule: [
+      { time: "11:00", title: "나고야성 방문", detail: "혼마루어전 · 금샤치" },
+      { time: "16:00", title: "오스 상점가", detail: "먹거리 · 빈티지 쇼핑" },
     ],
   },
 ];
