@@ -17,13 +17,29 @@ export type ScheduleItem = {
   title: string;
   detail: string;
   placeQuery?: string;
+  placeId?: string;
+  placeAddress?: string;
+  placeLatitude?: number;
+  placeLongitude?: number;
+  googleMapsUri?: string;
   createdAt: string;
   updatedAt: string;
 };
 
 export type ScheduleDraft = Pick<
   ScheduleItem,
-  "regionId" | "day" | "date" | "time" | "title" | "detail" | "placeQuery"
+  | "regionId"
+  | "day"
+  | "date"
+  | "time"
+  | "title"
+  | "detail"
+  | "placeQuery"
+  | "placeId"
+  | "placeAddress"
+  | "placeLatitude"
+  | "placeLongitude"
+  | "googleMapsUri"
 >;
 
 type ScheduleContextValue = {
@@ -61,6 +77,11 @@ function normalizeDraft(draft: ScheduleDraft) {
     title: draft.title.trim(),
     detail: draft.detail.trim(),
     placeQuery: draft.placeQuery?.trim() ?? "",
+    placeId: draft.placeId?.trim() ?? "",
+    placeAddress: draft.placeAddress?.trim() ?? "",
+    googleMapsUri: draft.googleMapsUri?.trim() ?? "",
+    placeLatitude: Number.isFinite(draft.placeLatitude) ? draft.placeLatitude : undefined,
+    placeLongitude: Number.isFinite(draft.placeLongitude) ? draft.placeLongitude : undefined,
   };
 }
 
