@@ -6,6 +6,8 @@ import { Screen } from "@/src/components/Screen";
 import { useSchedule } from "@/src/context/ScheduleContext";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { getHomeRegion, homeRegions } from "@/src/data/homeRegions";
+import { getJapanRegion } from "@/src/data/japanRegions";
+import { openGoogleMapsSearch } from "@/src/services/navigation";
 import { colors, radius } from "@/src/theme";
 
 function getLocalDateString() {
@@ -29,6 +31,7 @@ export default function ScheduleEditScreen() {
   const [date, setDate] = useState(getLocalDateString());
   const [time, setTime] = useState("10:00");
   const [title, setTitle] = useState("");
+  const [placeQuery, setPlaceQuery] = useState("");
   const [detail, setDetail] = useState("");
   const [error, setError] = useState("");
 
@@ -39,11 +42,28 @@ export default function ScheduleEditScreen() {
     setDate(existing.date);
     setTime(existing.time);
     setTitle(existing.title);
+    setPlaceQuery(existing.placeQuery ?? "");
     setDetail(existing.detail);
   }, [existing?.id]);
 
   const region = useMemo(() => getHomeRegion(regionId), [regionId]);
+  const japanRegion = useMemo(() => getJapanRegion(regionId), [regionId]);
   const isEditing = Boolean(existing);
+  const mapSearchQuery = useMemo(() => {
+    const custom = placeQuery.trim();
+    if (custom) return custom;
+    const name = title.trim();
+    return name ? `${name} ${japanRegion.city} Japan` : "";
+  }, [japanRegion.city, placeQuery, title]);
+
+  const previewPlace = () => {
+    if (!mapSearchQuery) {
+      setError("먼저 장소명 또는 지도 검색어를 입력해 주세요.");
+      return;
+    }
+    setError("");
+    void openGoogleMapsSearch(mapSearchQuery);
+  };
 
   const save = () => {
     const normalizedTitle = title.trim();
@@ -70,6 +90,7 @@ export default function ScheduleEditScreen() {
       time: normalizedTime,
       title: normalizedTitle,
       detail: detail.trim(),
+      placeQuery: placeQuery.trim(),
     };
 
     if (existing) {
@@ -170,6 +191,22 @@ export default function ScheduleEditScreen() {
         value={title}
       />
 
+      <Text style={styles.label}>지도 검색어 · 주소</Text>
+      <TextInput
+        onChangeText={setPlaceQuery}
+        placeholder="선택 입력 · 예: Senso-ji, Asakusa"
+        placeholderTextColor="#9AA4A8"
+        style={styles.input}
+        value={placeQuery}
+      />
+      <Text style={styles.helperText}>
+        비워두면 장소명과 {japanRegion.city} 지역명을 조합해 Google Maps에서 검색합니다.
+      </Text>
+      <Pressable onPress={previewPlace} style={[styles.mapButton, { borderColor: region.accent }]}> 
+        <MaterialCommunityIcons color={region.accent} name="map-search-outline" size={19} />
+        <Text style={[styles.mapButtonText, { color: region.accent }]}>Google Maps에서 장소 확인</Text>
+      </Pressable>
+
       <Text style={styles.label}>메모</Text>
       <TextInput
         multiline
@@ -218,6 +255,9 @@ const styles = StyleSheet.create({
   timeField: { width: 112 },
   input: { minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, color: colors.text, fontSize: 14, fontWeight: "700", paddingHorizontal: 13, paddingVertical: 11 },
   memoInput: { minHeight: 112 },
+  helperText: { color: colors.textMuted, fontSize: 10, lineHeight: 15, fontWeight: "600", marginTop: 6 },
+  mapButton: { height: 44, borderRadius: radius.pill, borderWidth: 1, backgroundColor: colors.surface, marginTop: 9, flexDirection: "row", gap: 7, alignItems: "center", justifyContent: "center" },
+  mapButtonText: { fontSize: 12, fontWeight: "900" },
   error: { color: "#C43C35", fontSize: 12, fontWeight: "800", marginTop: 12 },
   primaryButton: { height: 52, borderRadius: radius.pill, marginTop: 20, flexDirection: "row", gap: 7, alignItems: "center", justifyContent: "center" },
   primaryButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },

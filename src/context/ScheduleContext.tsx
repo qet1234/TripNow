@@ -16,13 +16,14 @@ export type ScheduleItem = {
   time: string;
   title: string;
   detail: string;
+  placeQuery?: string;
   createdAt: string;
   updatedAt: string;
 };
 
 export type ScheduleDraft = Pick<
   ScheduleItem,
-  "regionId" | "day" | "date" | "time" | "title" | "detail"
+  "regionId" | "day" | "date" | "time" | "title" | "detail" | "placeQuery"
 >;
 
 type ScheduleContextValue = {
@@ -49,6 +50,18 @@ function sortSchedules(items: ScheduleItem[]) {
 
 function makeScheduleId() {
   return `schedule-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function normalizeDraft(draft: ScheduleDraft) {
+  return {
+    ...draft,
+    day: Math.max(1, Math.min(4, Math.trunc(draft.day))),
+    date: draft.date.trim(),
+    time: draft.time.trim(),
+    title: draft.title.trim(),
+    detail: draft.detail.trim(),
+    placeQuery: draft.placeQuery?.trim() ?? "",
+  };
 }
 
 export function ScheduleProvider({ children }: PropsWithChildren) {
@@ -82,11 +95,8 @@ export function ScheduleProvider({ children }: PropsWithChildren) {
     const now = new Date().toISOString();
     const id = makeScheduleId();
     const item: ScheduleItem = {
-      ...draft,
+      ...normalizeDraft(draft),
       id,
-      day: Math.max(1, Math.min(4, Math.trunc(draft.day))),
-      title: draft.title.trim(),
-      detail: draft.detail.trim(),
       createdAt: now,
       updatedAt: now,
     };
@@ -103,10 +113,7 @@ export function ScheduleProvider({ children }: PropsWithChildren) {
           item.id === id
             ? {
                 ...item,
-                ...draft,
-                day: Math.max(1, Math.min(4, Math.trunc(draft.day))),
-                title: draft.title.trim(),
-                detail: draft.detail.trim(),
+                ...normalizeDraft(draft),
                 updatedAt: now,
               }
             : item,

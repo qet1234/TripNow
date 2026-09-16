@@ -3,10 +3,16 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/src/components/Screen";
-import { useSchedule } from "@/src/context/ScheduleContext";
+import { type ScheduleItem, useSchedule } from "@/src/context/ScheduleContext";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { getHomeRegion } from "@/src/data/homeRegions";
+import { getJapanRegion } from "@/src/data/japanRegions";
+import { openGoogleMapsSearch } from "@/src/services/navigation";
 import { colors, radius } from "@/src/theme";
+
+function getMapQuery(item: ScheduleItem, city: string) {
+  return item.placeQuery?.trim() || `${item.title} ${city} Japan`;
+}
 
 export default function ScheduleScreen() {
   const router = useRouter();
@@ -14,6 +20,7 @@ export default function ScheduleScreen() {
   const { getSchedulesByRegion, hydrated } = useSchedule();
   const [selectedDay, setSelectedDay] = useState(1);
   const region = getHomeRegion(selectedRegionId);
+  const japanRegion = getJapanRegion(selectedRegionId);
   const regionSchedules = getSchedulesByRegion(selectedRegionId);
   const daySchedules = regionSchedules.filter((item) => item.day === selectedDay);
 
@@ -83,22 +90,47 @@ export default function ScheduleScreen() {
                 <View style={[styles.dot, { backgroundColor: region.accent, borderColor: region.softStrong }]} />
                 {index < daySchedules.length - 1 ? <View style={[styles.line, { backgroundColor: region.softStrong }]} /> : null}
               </View>
-              <Pressable
-                onPress={() => router.push(`/schedule-edit?id=${encodeURIComponent(item.id)}`)}
-                style={styles.eventCard}
-              >
-                <View style={styles.eventTop}>
-                  <View style={[styles.eventIcon, { backgroundColor: region.soft }]}> 
-                    <MaterialCommunityIcons color={region.accent} name="map-marker-outline" size={22} />
+              <View style={styles.eventCard}>
+                <Pressable
+                  onPress={() => router.push(`/schedule-edit?id=${encodeURIComponent(item.id)}`)}
+                  style={styles.eventMain}
+                >
+                  <View style={styles.eventTop}>
+                    <View style={[styles.eventIcon, { backgroundColor: region.soft }]}> 
+                      <MaterialCommunityIcons color={region.accent} name="map-marker-outline" size={22} />
+                    </View>
+                    <View style={styles.eventCopy}>
+                      <Text numberOfLines={1} style={styles.eventTitle}>{item.title}</Text>
+                      <Text style={styles.eventDate}>{item.date}</Text>
+                    </View>
+                    <MaterialCommunityIcons color="#63747A" name="chevron-right" size={23} />
                   </View>
-                  <View style={styles.eventCopy}>
-                    <Text numberOfLines={1} style={styles.eventTitle}>{item.title}</Text>
-                    <Text style={styles.eventDate}>{item.date}</Text>
-                  </View>
-                  <MaterialCommunityIcons color="#63747A" name="chevron-right" size={23} />
+                  {item.detail ? <Text style={styles.eventDetail}>{item.detail}</Text> : null}
+                  {item.placeQuery ? (
+                    <View style={styles.placeQueryRow}>
+                      <MaterialCommunityIcons color={colors.textMuted} name="map-search-outline" size={14} />
+                      <Text numberOfLines={1} style={styles.placeQueryText}>{item.placeQuery}</Text>
+                    </View>
+                  ) : null}
+                </Pressable>
+                <View style={styles.eventActions}>
+                  <Pressable
+                    onPress={() => void openGoogleMapsSearch(getMapQuery(item, japanRegion.city))}
+                    style={styles.actionButton}
+                  >
+                    <MaterialCommunityIcons color={region.accent} name="map-search-outline" size={16} />
+                    <Text style={[styles.actionText, { color: region.accent }]}>지도</Text>
+                  </Pressable>
+                  <View style={styles.actionDivider} />
+                  <Pressable
+                    onPress={() => router.push(`/move?scheduleId=${encodeURIComponent(item.id)}`)}
+                    style={styles.actionButton}
+                  >
+                    <MaterialCommunityIcons color={region.accent} name="directions" size={16} />
+                    <Text style={[styles.actionText, { color: region.accent }]}>경로 보기</Text>
+                  </Pressable>
                 </View>
-                {item.detail ? <Text style={styles.eventDetail}>{item.detail}</Text> : null}
-              </Pressable>
+              </View>
             </View>
           ))}
         </View>
@@ -125,18 +157,25 @@ const styles = StyleSheet.create({
   dayCount: { minWidth: 18, height: 18, borderRadius: 9, backgroundColor: "#EEF2F1", color: colors.textMuted, fontSize: 10, fontWeight: "900", textAlign: "center", lineHeight: 18 },
   dayCountActive: { backgroundColor: "rgba(255,255,255,0.22)", color: "#FFFFFF" },
   timeline: { paddingTop: 7 },
-  timelineRow: { flexDirection: "row", minHeight: 108, gap: 10 },
+  timelineRow: { flexDirection: "row", minHeight: 132, gap: 10 },
   timeColumn: { width: 52, alignItems: "center" },
   time: { color: colors.text, fontSize: 12, fontWeight: "800", marginBottom: 7 },
   dot: { width: 14, height: 14, borderRadius: 7, borderWidth: 4, zIndex: 1 },
   line: { flex: 1, width: 2 },
-  eventCard: { flex: 1, minHeight: 90, marginBottom: 14, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 13, paddingVertical: 12 },
+  eventCard: { flex: 1, marginBottom: 14, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: "hidden" },
+  eventMain: { paddingHorizontal: 13, paddingTop: 12, paddingBottom: 10 },
   eventTop: { flexDirection: "row", alignItems: "center", gap: 10 },
   eventIcon: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   eventCopy: { flex: 1, minWidth: 0 },
   eventTitle: { color: colors.text, fontSize: 15, fontWeight: "900" },
   eventDate: { color: colors.textMuted, fontSize: 10, fontWeight: "700", marginTop: 3 },
   eventDetail: { color: colors.textMuted, fontSize: 12, lineHeight: 18, fontWeight: "600", marginTop: 9 },
+  placeQueryRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 7 },
+  placeQueryText: { flex: 1, color: colors.textMuted, fontSize: 10, fontWeight: "600" },
+  eventActions: { height: 42, borderTopWidth: 1, borderTopColor: colors.border, flexDirection: "row", alignItems: "center" },
+  actionButton: { flex: 1, height: "100%", flexDirection: "row", gap: 5, alignItems: "center", justifyContent: "center" },
+  actionText: { fontSize: 11, fontWeight: "900" },
+  actionDivider: { width: 1, height: 20, backgroundColor: colors.border },
   emptyState: { minHeight: 255, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 },
   emptyIcon: { width: 62, height: 62, borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 14 },
   emptyTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "center" },

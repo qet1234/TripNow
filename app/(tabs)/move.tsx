@@ -1,62 +1,146 @@
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/src/components/Screen";
 import { GalaxyTransitLiveCard } from "@/src/components/GalaxyTransitLiveCard";
+import { type ScheduleItem, useSchedule } from "@/src/context/ScheduleContext";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { getJapanRegion } from "@/src/data/japanRegions";
 import { supportedRealtimeLines } from "@/src/data/tripNowDesign";
-import { openGoogleMapsDirections } from "@/src/services/navigation";
+import { openGoogleMapsDirections, openGoogleMapsSearch } from "@/src/services/navigation";
 import { colors, radius } from "@/src/theme";
 
-const routeSteps = [
-  { time: "14:20", station: "시부야역", line: "도쿄메트로 긴자선", color: "#F3A322", detail: "아사쿠사 방면" },
-  { time: "14:53", station: "아사쿠사역", line: "도보 7분", color: colors.blue, detail: "아사쿠사 도착" },
-] as const;
+function getMapQuery(item: ScheduleItem, city: string) {
+  return item.placeQuery?.trim() || `${item.title} ${city} Japan`;
+}
 
 export default function MoveScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams<{ scheduleId?: string }>();
   const { selectedRegionId } = useTravelMode();
+  const { getScheduleById, getSchedulesByRegion, hydrated } = useSchedule();
   const region = getJapanRegion(selectedRegionId);
+  const regionSchedules = getSchedulesByRegion(selectedRegionId);
+  const requested = params.scheduleId ? getScheduleById(params.scheduleId) : undefined;
+  const target = requested?.regionId === selectedRegionId ? requested : regionSchedules[0];
+  const sameDay = target
+    ? regionSchedules.filter((item) => item.day === target.day && item.date === target.date)
+    : [];
+  const targetIndex = target ? sameDay.findIndex((item) => item.id === target.id) : -1;
+  const previous = targetIndex > 0 ? sameDay[targetIndex - 1] : undefined;
+
+  const destinationQuery = target ? getMapQuery(target, region.city) : region.label;
+  const originQuery = previous ? getMapQuery(previous, region.city) : region.label;
+  const originLabel = previous?.title ?? `${region.city} · ${region.area}`;
+  const destinationLabel = target?.title ?? "등록된 일정 없음";
+
+  const openDirections = () => {
+    if (!target) return;
+    void openGoogleMapsDirections(destinationQuery, {
+      origin: originQuery,
+      travelMode: "transit",
+    });
+  };
 
   return (
     <Screen>
       <View style={styles.header}>
-        <Text style={styles.back}>‹</Text>
+        <Pressable hitSlop={10} onPress={() => router.back()} style={styles.headerIcon}>
+          <MaterialCommunityIcons color={colors.text} name="chevron-left" size={28} />
+        </Pressable>
         <Text style={styles.title}>길찾기</Text>
-        <Text style={styles.options}>⋮</Text>
+        <View style={styles.headerIcon} />
       </View>
 
-      <View style={styles.searchCard}>
-        <View style={styles.searchRow}><View style={styles.startDot} /><Text style={styles.searchText}>시부야역</Text></View>
-        <View style={styles.searchDivider} />
-        <View style={styles.searchRow}><Text style={styles.pin}>●</Text><Text style={styles.searchText}>아사쿠사역</Text></View>
-        <Text style={styles.swap}>↕</Text>
-      </View>
-
-      <View style={styles.summary}>
-        <Text style={styles.summaryTime}>14:20</Text>
-        <View style={styles.summaryCenter}><Text style={styles.summaryDuration}>33분</Text><Text style={styles.summaryTransfer}>환승 없음</Text></View>
-        <Text style={styles.summaryTime}>14:53</Text>
-      </View>
-
-      <View style={styles.routeCard}>
-        {routeSteps.map((step, index) => (
-          <View key={step.time} style={styles.routeRow}>
-            <Text style={styles.routeTime}>{step.time}</Text>
-            <View style={styles.railColumn}>
-              <View style={[styles.railDot, { borderColor: step.color }]} />
-              {index < routeSteps.length - 1 ? <View style={styles.railLine} /> : null}
+      {!hydrated ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>일정을 불러오는 중입니다</Text>
+        </View>
+      ) : !target ? (
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIcon}>
+            <MaterialCommunityIcons color={colors.primary} name="map-marker-plus-outline" size={30} />
+          </View>
+          <Text style={styles.emptyTitle}>길찾기에 사용할 일정이 없습니다</Text>
+          <Text style={styles.emptyDescription}>일정 탭에서 목적지를 먼저 등록해 주세요.</Text>
+          <Pressable onPress={() => router.push("/schedule")} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>일정 등록하러 가기</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <>
+          <View style={styles.searchCard}>
+            <View style={styles.searchRow}>
+              <View style={styles.startDot} />
+              <View style={styles.searchCopy}>
+                <Text style={styles.searchCaption}>{previous ? "이전 일정" : "출발 지역"}</Text>
+                <Text numberOfLines={1} style={styles.searchText}>{originLabel}</Text>
+              </View>
             </View>
-            <View style={styles.routeInfo}>
-              <Text style={styles.station}>{step.station}</Text>
-              <View style={[styles.lineBadge, { backgroundColor: step.color }]}><Text style={styles.lineBadgeText}>{step.line}</Text></View>
-              <Text style={styles.routeDetail}>{step.detail}</Text>
+            <View style={styles.searchDivider} />
+            <View style={styles.searchRow}>
+              <MaterialCommunityIcons color={colors.primary} name="map-marker" size={17} />
+              <View style={styles.searchCopy}>
+                <Text style={styles.searchCaption}>목적지</Text>
+                <Text numberOfLines={1} style={styles.searchText}>{destinationLabel}</Text>
+              </View>
             </View>
           </View>
-        ))}
-      </View>
 
-      <Pressable style={styles.googleButton} onPress={() => openGoogleMapsDirections("Asakusa Station Tokyo Japan")}>
-        <Text style={styles.googleButtonText}>Google Maps에서 실제 경로 확인</Text>
-      </Pressable>
+          <View style={styles.summary}>
+            <View>
+              <Text style={styles.summaryLabel}>{target.day}일차</Text>
+              <Text style={styles.summaryDate}>{target.date}</Text>
+            </View>
+            <View style={styles.summaryCenter}>
+              <MaterialCommunityIcons color={colors.teal} name="clock-outline" size={20} />
+              <Text style={styles.summaryTime}>{target.time}</Text>
+            </View>
+          </View>
+
+          <View style={styles.routeCard}>
+            <View style={styles.routeRow}>
+              <View style={styles.railColumn}>
+                <View style={[styles.railDot, { borderColor: colors.teal }]} />
+                <View style={styles.railLine} />
+              </View>
+              <View style={styles.routeInfo}>
+                <Text style={styles.routeLabel}>{previous ? "이전 일정에서 출발" : "선택 지역에서 출발"}</Text>
+                <Text style={styles.station}>{originLabel}</Text>
+              </View>
+            </View>
+            <View style={styles.routeRow}>
+              <View style={styles.railColumn}>
+                <View style={[styles.railDot, { borderColor: colors.primary }]} />
+              </View>
+              <View style={styles.routeInfo}>
+                <Text style={styles.routeLabel}>등록한 일정 목적지</Text>
+                <Text style={styles.station}>{destinationLabel}</Text>
+                {target.detail ? <Text style={styles.routeDetail}>{target.detail}</Text> : null}
+                <Text numberOfLines={1} style={styles.queryText}>{destinationQuery}</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.actionRow}>
+            <Pressable
+              style={styles.secondaryButton}
+              onPress={() => void openGoogleMapsSearch(destinationQuery)}
+            >
+              <MaterialCommunityIcons color={colors.primary} name="map-search-outline" size={18} />
+              <Text style={styles.secondaryButtonText}>목적지 지도</Text>
+            </Pressable>
+            <Pressable style={styles.googleButton} onPress={openDirections}>
+              <MaterialCommunityIcons color="#FFFFFF" name="directions" size={18} />
+              <Text style={styles.googleButtonText}>실제 경로</Text>
+            </Pressable>
+          </View>
+
+          <Text style={styles.externalNote}>
+            이동시간과 환승 정보는 임의로 표시하지 않고 Google Maps의 최신 경로 결과에서 확인합니다.
+          </Text>
+        </>
+      )}
 
       <View style={styles.liveBox}>
         <View style={styles.liveHeading}>
@@ -67,8 +151,13 @@ export default function MoveScreen() {
         <View style={styles.lineGrid}>
           {supportedRealtimeLines.map((line) => (
             <View key={`${line.operator}-${line.code}`} style={styles.liveLine}>
-              <View style={[styles.lineCode, { backgroundColor: line.color }]}><Text style={styles.lineCodeText}>{line.code}</Text></View>
-              <View><Text style={styles.liveLineName}>{line.name}</Text><Text style={styles.operator}>{line.operator}</Text></View>
+              <View style={[styles.lineCode, { backgroundColor: line.color }]}>
+                <Text style={styles.lineCodeText}>{line.code}</Text>
+              </View>
+              <View>
+                <Text style={styles.liveLineName}>{line.name}</Text>
+                <Text style={styles.operator}>{line.operator}</Text>
+              </View>
             </View>
           ))}
         </View>
@@ -76,41 +165,51 @@ export default function MoveScreen() {
       </View>
 
       <GalaxyTransitLiveCard />
-      <View style={styles.regionNote}><Text style={styles.regionNoteText}>현재 선택 지역 · {region.label}</Text></View>
+      <View style={styles.regionNote}>
+        <Text style={styles.regionNoteText}>현재 선택 지역 · {region.label}</Text>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   header: { height: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  back: { color: colors.text, fontSize: 30 },
+  headerIcon: { width: 42, height: 42, alignItems: "center", justifyContent: "center" },
   title: { color: colors.text, fontSize: 19, fontWeight: "900" },
-  options: { color: colors.text, fontSize: 25 },
   searchCard: { borderRadius: radius.md, backgroundColor: colors.surface, padding: 14, borderWidth: 1, borderColor: colors.border },
-  searchRow: { height: 32, flexDirection: "row", alignItems: "center", gap: 10 },
+  searchRow: { minHeight: 45, flexDirection: "row", alignItems: "center", gap: 10 },
+  searchCopy: { flex: 1, minWidth: 0 },
+  searchCaption: { color: colors.textMuted, fontSize: 9, fontWeight: "800", marginBottom: 2 },
   startDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.teal },
-  pin: { color: colors.primary, fontSize: 13 },
   searchText: { color: colors.text, fontSize: 15, fontWeight: "800" },
   searchDivider: { height: 1, backgroundColor: colors.border, marginLeft: 20 },
-  swap: { position: "absolute", right: 16, top: 33, color: colors.text, fontSize: 22 },
-  summary: { height: 76, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 16, marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  summaryTime: { color: colors.text, fontSize: 24, fontWeight: "900" },
-  summaryCenter: { alignItems: "center", gap: 3 },
-  summaryDuration: { color: colors.teal, fontSize: 19, fontWeight: "900" },
-  summaryTransfer: { color: colors.textMuted, fontSize: 11, fontWeight: "600" },
+  summary: { minHeight: 76, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 16, marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  summaryLabel: { color: colors.textMuted, fontSize: 10, fontWeight: "800" },
+  summaryDate: { color: colors.text, fontSize: 16, fontWeight: "900", marginTop: 3 },
+  summaryCenter: { flexDirection: "row", alignItems: "center", gap: 6 },
+  summaryTime: { color: colors.teal, fontSize: 22, fontWeight: "900" },
   routeCard: { borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: 14, marginTop: 12 },
-  routeRow: { minHeight: 88, flexDirection: "row" },
-  routeTime: { width: 44, color: colors.text, fontSize: 12, fontWeight: "700", paddingTop: 2 },
-  railColumn: { width: 24, alignItems: "center" },
+  routeRow: { minHeight: 82, flexDirection: "row" },
+  railColumn: { width: 28, alignItems: "center" },
   railDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 4, backgroundColor: colors.surface, zIndex: 1 },
-  railLine: { width: 3, flex: 1, backgroundColor: colors.warning },
-  routeInfo: { flex: 1, gap: 5 },
+  railLine: { width: 3, flex: 1, backgroundColor: colors.border },
+  routeInfo: { flex: 1, gap: 4, paddingBottom: 10 },
+  routeLabel: { color: colors.textMuted, fontSize: 10, fontWeight: "800" },
   station: { color: colors.text, fontSize: 15, fontWeight: "900" },
-  lineBadge: { alignSelf: "flex-start", borderRadius: 5, paddingHorizontal: 8, paddingVertical: 4 },
-  lineBadgeText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900" },
-  routeDetail: { color: colors.textMuted, fontSize: 11 },
-  googleButton: { height: 44, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", marginTop: 12 },
-  googleButtonText: { color: colors.primary, fontSize: 12, fontWeight: "900" },
+  routeDetail: { color: colors.textMuted, fontSize: 11, lineHeight: 17 },
+  queryText: { color: colors.textMuted, fontSize: 9, marginTop: 2 },
+  actionRow: { flexDirection: "row", gap: 8, marginTop: 12 },
+  secondaryButton: { flex: 1, height: 46, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.surface, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" },
+  secondaryButtonText: { color: colors.primary, fontSize: 12, fontWeight: "900" },
+  googleButton: { flex: 1, height: 46, borderRadius: radius.pill, backgroundColor: colors.primary, flexDirection: "row", gap: 6, alignItems: "center", justifyContent: "center" },
+  googleButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "900" },
+  externalNote: { color: colors.textMuted, fontSize: 10, lineHeight: 15, textAlign: "center", marginTop: 8, paddingHorizontal: 10 },
+  emptyState: { minHeight: 250, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 },
+  emptyIcon: { width: 62, height: 62, borderRadius: 20, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center", marginBottom: 14 },
+  emptyTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "center" },
+  emptyDescription: { color: colors.textMuted, fontSize: 12, lineHeight: 18, textAlign: "center", marginTop: 6 },
+  primaryButton: { height: 44, borderRadius: radius.pill, backgroundColor: colors.primary, paddingHorizontal: 18, alignItems: "center", justifyContent: "center", marginTop: 15 },
+  primaryButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
   liveBox: { borderRadius: radius.md, backgroundColor: colors.surface, padding: 15, borderWidth: 1, borderColor: colors.border, marginTop: 12, marginBottom: 12 },
   liveHeading: { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 12 },
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.teal },
