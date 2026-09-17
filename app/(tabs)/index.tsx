@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useRouter } from "expo-router";
 import {
@@ -10,7 +10,9 @@ import {
   Text,
   View,
 } from "react-native";
+import { AirportHome } from "@/src/components/AirportHome";
 import { Screen } from "@/src/components/Screen";
+import { useAirportJourney } from "@/src/context/AirportContext";
 import { useSchedule } from "@/src/context/ScheduleContext";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { getHomeRegion, homeRegions } from "@/src/data/homeRegions";
@@ -21,13 +23,13 @@ type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 const quickActions: ReadonlyArray<{
   label: string;
   icon: IconName;
-  route: "/hotel" | "/profile" | "/travel";
+  route: "/airport" | "/hotel" | "/profile" | "/travel";
   warm?: boolean;
 }> = [
   { label: "호텔 주소", icon: "bed-king-outline", route: "/hotel" },
   { label: "쿠폰", icon: "ticket-percent-outline", route: "/travel" },
   { label: "여행 경비", icon: "wallet-outline", route: "/profile" },
-  { label: "보관함", icon: "bookmark-outline", route: "/profile", warm: true },
+  { label: "공항 안내", icon: "airplane-takeoff", route: "/airport", warm: true },
 ];
 
 export default function HomeScreen() {
@@ -35,12 +37,44 @@ export default function HomeScreen() {
   const { selectedRegionId, setSelectedRegionId } = useTravelMode();
   const { getSchedulesByRegion } = useSchedule();
   const { isCompactWidth, isLandscape, isLargeScreen } = useResponsiveLayout();
+  const { plan, phase, hydrated: airportHydrated } = useAirportJourney();
+  const [showAirport, setShowAirport] = useState(false);
+
+  useEffect(() => {
+    if (airportHydrated) {
+      setShowAirport(phase !== "none");
+    }
+  }, [airportHydrated, phase]);
+
   const region = getHomeRegion(selectedRegionId);
   const regionSchedules = getSchedulesByRegion(selectedRegionId);
   const homeDay = regionSchedules[0]?.day ?? 1;
   const homeSchedules = regionSchedules.filter((item) => item.day === homeDay).slice(0, 2);
   const nextSchedule = homeSchedules[0];
   const heroHeight = isCompactWidth ? 120 : isLargeScreen ? 180 : isLandscape ? 150 : 137;
+
+  if (!airportHydrated) {
+    return (
+      <Screen>
+        <View style={styles.loadingState}>
+          <MaterialCommunityIcons color="#2D73D5" name="airplane-clock" size={31} />
+          <Text style={styles.loadingText}>여행 일정을 확인하는 중입니다</Text>
+        </View>
+      </Screen>
+    );
+  }
+
+  if (showAirport && phase !== "none") {
+    return (
+      <AirportHome
+        onContinue={() => setShowAirport(false)}
+        onOpenSetup={() => router.push("/airport")}
+        onOpenTransport={() => router.push("/(tabs)/move")}
+        phase={phase}
+        plan={plan}
+      />
+    );
+  }
 
   return (
     <Screen>
@@ -286,6 +320,8 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingState: { flex: 1, minHeight: 420, alignItems: "center", justifyContent: "center", gap: 10 },
+  loadingText: { color: "#5E6B70", fontSize: 13, fontWeight: "800" },
   themeWash: { position: "absolute", top: -40, left: -100, right: -100, height: 250, opacity: 0.55 },
   themeWashLarge: { height: 320 },
   header: { minHeight: 43, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", overflow: "visible" },
