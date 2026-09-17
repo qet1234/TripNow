@@ -68,7 +68,7 @@ export function AirportHome({
       <View style={styles.flightCard}>
         <View style={styles.cardHeading}>
           <View style={[styles.cardIcon, { backgroundColor: soft }]}>
-            <MaterialCommunityIcons color={accent} name="airplane-outline" size={21} />
+            <MaterialCommunityIcons color={accent} name="airplane" size={21} />
           </View>
           <View style={styles.cardHeadingCopy}>
             <Text style={styles.cardLabel}>항공 일정</Text>
