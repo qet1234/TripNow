@@ -4,7 +4,11 @@ import { ExploreMap } from "@/src/components/ExploreMap";
 import { Screen } from "@/src/components/Screen";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { mockPlaces } from "@/src/data/mockJapan";
-import { getJapanRegion, japanRegions } from "@/src/data/japanRegions";
+import {
+  getJapanRegion,
+  getJapanRegionsByCity,
+  japanCities,
+} from "@/src/data/japanRegions";
 import { openGoogleMapsDirections, openGoogleMapsSearch } from "@/src/services/navigation";
 import { colors, radius } from "@/src/theme";
 
@@ -15,11 +19,19 @@ export default function ExploreScreen() {
   const { selectedRegionId, setSelectedRegionId, mode } = useTravelMode();
   const [activeFilter, setActiveFilter] = useState<(typeof filters)[number]>("맛집");
   const region = getJapanRegion(selectedRegionId);
+  const cityRegions = getJapanRegionsByCity(region.cityId);
   const places = selectedRegionId === "tokyo-shibuya" ? mockPlaces : [];
 
   const openRestaurantSearch = (category?: (typeof restaurantCategories)[number]) => {
     const keyword = category ?? "맛집";
     return openGoogleMapsSearch(`${region.city} ${region.area} ${keyword}`);
+  };
+
+  const selectCity = (cityId: string) => {
+    const firstRegion = getJapanRegionsByCity(cityId)[0];
+    if (firstRegion) {
+      setSelectedRegionId(firstRegion.id);
+    }
   };
 
   const markers = places.length > 0
@@ -50,16 +62,46 @@ export default function ExploreScreen() {
         })}
       </ScrollView>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.regions}>
-        {japanRegions.map((item) => {
-          const selected = item.id === selectedRegionId;
-          return (
-            <Pressable key={item.id} onPress={() => setSelectedRegionId(item.id)} style={[styles.region, selected && styles.regionSelected]}>
-              <Text style={[styles.regionText, selected && styles.regionTextSelected]}>{item.city} · {item.area}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      <View style={styles.regionPicker}>
+        <Text style={styles.regionPickerLabel}>도시 선택</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cities}>
+          {japanCities.map((city) => {
+            const selected = city.id === region.cityId;
+            return (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                key={city.id}
+                onPress={() => selectCity(city.id)}
+                style={[styles.city, selected && styles.citySelected]}
+              >
+                <Text style={[styles.cityText, selected && styles.cityTextSelected]}>{city.label}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.areaHeader}>
+          <Text style={styles.regionPickerLabel}>{region.city} 행정구역</Text>
+          <Text style={styles.areaCount}>{cityRegions.length}곳</Text>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.areas}>
+          {cityRegions.map((item) => {
+            const selected = item.id === selectedRegionId;
+            return (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                key={item.id}
+                onPress={() => setSelectedRegionId(item.id)}
+                style={[styles.area, selected && styles.areaSelected]}
+              >
+                <Text style={[styles.areaText, selected && styles.areaTextSelected]}>{item.area}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       <View style={styles.modeNote}>
         <View style={styles.modeDot} />
@@ -127,11 +169,20 @@ const styles = StyleSheet.create({
   filterActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   filterText: { color: colors.text, fontSize: 13, fontWeight: "700" },
   filterTextActive: { color: "#FFFFFF" },
-  regions: { gap: 8, paddingBottom: 10 },
-  region: { borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 8 },
-  regionSelected: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
-  regionText: { color: colors.textMuted, fontSize: 11, fontWeight: "700" },
-  regionTextSelected: { color: colors.primary },
+  regionPicker: { paddingBottom: 4 },
+  regionPickerLabel: { color: colors.text, fontSize: 12, fontWeight: "800" },
+  cities: { gap: 8, paddingBottom: 12, paddingTop: 8 },
+  city: { minHeight: 38, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, justifyContent: "center", paddingHorizontal: 15 },
+  citySelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  cityText: { color: colors.textMuted, fontSize: 12, fontWeight: "800" },
+  cityTextSelected: { color: "#FFFFFF" },
+  areaHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  areaCount: { color: colors.textMuted, fontSize: 11, fontWeight: "700" },
+  areas: { gap: 8, paddingBottom: 10, paddingTop: 8 },
+  area: { minHeight: 34, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, justifyContent: "center", paddingHorizontal: 12 },
+  areaSelected: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
+  areaText: { color: colors.textMuted, fontSize: 11, fontWeight: "700" },
+  areaTextSelected: { color: colors.primary },
   modeNote: { flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 8 },
   modeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.teal },
   modeNoteText: { color: colors.textMuted, fontSize: 11 },
