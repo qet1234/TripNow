@@ -165,9 +165,9 @@ function parseTime(text: string) {
 
 function parseTerminal(text: string) {
   const match = text.match(
-    /(?:terminal|터미널|ターミナル)\s*(?:no\.?|#|:)?\s*([1-4])/i,
+    /(?:terminal|터미널|ターミナル)\s*(?:no\.?|#|:)?\s*([1-4])|\bT(?:erminal)?\s*([1-4])\b/i,
   );
-  return match?.[1] ?? "";
+  return match?.[1] ?? match?.[2] ?? "";
 }
 
 function compactDraft(value: FlightOcrDraft): FlightOcrDraft {
@@ -185,11 +185,11 @@ function parseFlightText(text: string): FlightOcrDraft {
 
   const orderedAirports = findAirportCodes(normalizedText);
   const origin =
-    findLabeledAirport(lines, /(?:from|출발|departure|origin|出発)/i) ||
+    findLabeledAirport(lines, /(?:from|출발|출발지|departure|dep|origin|出発)/i) ||
     orderedAirports[0] ||
     "";
   const destination =
-    findLabeledAirport(lines, /(?:to|도착|arrival|destination|到着)/i) ||
+    findLabeledAirport(lines, /(?:to|도착|도착지|arrival|arr|destination|到着)/i) ||
     orderedAirports.find((code) => code !== origin) ||
     "";
 
