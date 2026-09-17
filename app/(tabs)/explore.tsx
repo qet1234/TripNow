@@ -13,7 +13,26 @@ import { openGoogleMapsDirections, openGoogleMapsSearch } from "@/src/services/n
 import { colors, radius } from "@/src/theme";
 
 const filters = ["맛집", "카페", "관광", "쇼핑"] as const;
-const restaurantCategories = ["스시", "라멘", "야키니쿠", "카페"] as const;
+const restaurantCategories = [
+  "스시",
+  "라멘",
+  "야키니쿠",
+  "카페",
+  "이자카야",
+  "우동",
+  "소바",
+  "돈카츠",
+  "텐동",
+  "야키토리",
+  "오코노미야키",
+  "타코야키",
+  "카레",
+  "규동",
+  "장어",
+  "가이세키",
+  "와규",
+  "디저트",
+] as const;
 
 export default function ExploreScreen() {
   const { selectedRegionId, setSelectedRegionId, mode } = useTravelMode();
