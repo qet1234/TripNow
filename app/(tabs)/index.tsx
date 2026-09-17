@@ -21,10 +21,10 @@ type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 const quickActions: ReadonlyArray<{
   label: string;
   icon: IconName;
-  route: "/profile" | "/travel";
+  route: "/hotel" | "/profile" | "/travel";
   warm?: boolean;
 }> = [
-  { label: "호텔 주소", icon: "bed-king-outline", route: "/travel" },
+  { label: "호텔 주소", icon: "bed-king-outline", route: "/hotel" },
   { label: "쿠폰", icon: "ticket-percent-outline", route: "/travel" },
   { label: "여행 경비", icon: "wallet-outline", route: "/profile" },
   { label: "보관함", icon: "bookmark-outline", route: "/profile", warm: true },

@@ -17,6 +17,7 @@ export default function RootLayout() {
       <ScheduleProvider>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="hotel" options={{ presentation: "card" }} />
           <Stack.Screen name="schedule-edit" options={{ presentation: "modal" }} />
         </Stack>
       </ScheduleProvider>

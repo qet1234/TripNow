@@ -1,0 +1,16 @@
+apply plugin: "com.android.library"
+apply plugin: "expo-module-gradle-plugin"
+
+group = "expo.modules.tripnowhotelocr"
+version = "0.1.0"
+
+android {
+  namespace "expo.modules.tripnowhotelocr"
+}
+
+dependencies {
+  // Bundled models keep OCR image input on the device and work without a model download.
+  implementation "com.google.mlkit:text-recognition:16.0.1"
+  implementation "com.google.mlkit:text-recognition-japanese:16.0.1"
+  implementation "com.google.mlkit:text-recognition-korean:16.0.1"
+}
