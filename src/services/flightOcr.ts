@@ -170,6 +170,12 @@ function parseTerminal(text: string) {
   return match?.[1] ?? "";
 }
 
+function compactDraft(value: FlightOcrDraft): FlightOcrDraft {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, field]) => Boolean(field)),
+  ) as FlightOcrDraft;
+}
+
 function parseFlightText(text: string): FlightOcrDraft {
   const normalizedText = text.replace(/\r/g, "\n");
   const lines = normalizedText
@@ -203,23 +209,23 @@ function parseFlightText(text: string): FlightOcrDraft {
   }
 
   if (isOutbound && !isReturn) {
-    return {
+    return compactDraft({
       outboundDate: date,
       outboundTime: time,
       outboundFlight: flight,
       outboundTerminal: terminal,
       outboundDestination: airportCity(destination) || destination,
-    };
+    });
   }
 
   if (isReturn && !isOutbound) {
-    return {
+    return compactDraft({
       returnDate: date,
       returnTime: time,
       returnFlight: flight,
       returnTerminal: terminal,
       returnOrigin: airportCity(origin) || origin,
-    };
+    });
   }
 
   throw new Error(
