@@ -140,9 +140,10 @@ export default function AirportScreen() {
           >
             <MaterialCommunityIcons color="#FFFFFF" name="camera-plus-outline" size={20} />
             <Text style={styles.scanButtonText}>
-              {scanning ? "항공권을 읽는 중..." : "종이 항공권·탑승권으로 자동 입력"}
+              {scanning ? "항공권을 읽는 중..." : "항공권 사진으로 자동 입력"}
             </Text>
           </Pressable>
+          <Text style={styles.scanHint}>휴대폰으로 찍어 둔 종이 항공권·탑승권 사진을 선택하세요. 왕복은 두 장을 차례로 추가할 수 있습니다.</Text>
           {scanMessage ? <Text style={styles.scanMessage}>{scanMessage}</Text> : null}
 
           <View style={styles.section}>
@@ -209,6 +210,7 @@ const styles = StyleSheet.create({
   scanButton: { minHeight: 50, borderRadius: radius.md, backgroundColor: colors.primary, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 12, paddingHorizontal: 12 },
   scanButtonDisabled: { opacity: 0.6 },
   scanButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900", textAlign: "center" },
+  scanHint: { color: colors.textMuted, fontSize: 11, lineHeight: 16, textAlign: "center", marginTop: 7, paddingHorizontal: 8 },
   scanMessage: { color: colors.teal, fontSize: 11, lineHeight: 16, textAlign: "center", marginTop: 7, paddingHorizontal: 8 },
   section: { borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: 14, marginTop: 12 },
   sectionHeading: { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 10 },
