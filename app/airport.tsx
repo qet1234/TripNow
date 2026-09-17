@@ -18,6 +18,7 @@ import {
   useAirportJourney,
 } from "@/src/context/AirportContext";
 import { colors, radius } from "@/src/theme";
+import { scanFlightBoardingPass } from "@/src/services/flightOcr";
 
 type FieldProps = {
   label: string;
@@ -51,10 +52,33 @@ export default function AirportScreen() {
   const { plan, savePlan, clearPlan } = useAirportJourney();
   const [draft, setDraft] = useState<AirportFlightPlan>(plan);
   const [error, setError] = useState("");
+  const [scanning, setScanning] = useState(false);
+  const [scanMessage, setScanMessage] = useState("");
 
   const update = (key: keyof AirportFlightPlan, value: string) => {
     setDraft((current) => ({ ...current, [key]: value }));
     setError("");
+  };
+
+  const scanBoardingPass = async () => {
+    setScanning(true);
+    setError("");
+    setScanMessage("");
+
+    try {
+      const scanned = await scanFlightBoardingPass();
+      if (!scanned) return;
+      setDraft((current) => ({ ...current, ...scanned }));
+      setScanMessage("항공권 정보를 확인해 주세요. 필요한 항목은 직접 수정할 수 있습니다.");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "항공권을 읽지 못했습니다. 직접 입력해 주세요.",
+      );
+    } finally {
+      setScanning(false);
+    }
   };
 
   const isValidDate = (value: string) => {
@@ -109,6 +133,18 @@ export default function AirportScreen() {
             </Text>
           </View>
 
+          <Pressable
+            disabled={scanning}
+            onPress={() => void scanBoardingPass()}
+            style={[styles.scanButton, scanning && styles.scanButtonDisabled]}
+          >
+            <MaterialCommunityIcons color="#FFFFFF" name="camera-plus-outline" size={20} />
+            <Text style={styles.scanButtonText}>
+              {scanning ? "항공권을 읽는 중..." : "종이 항공권·탑승권으로 자동 입력"}
+            </Text>
+          </Pressable>
+          {scanMessage ? <Text style={styles.scanMessage}>{scanMessage}</Text> : null}
+
           <View style={styles.section}>
             <View style={styles.sectionHeading}>
               <MaterialCommunityIcons color={colors.blue} name="airplane-takeoff" size={21} />
@@ -152,7 +188,7 @@ export default function AirportScreen() {
           </Pressable>
 
           <Text style={styles.privacy}>
-            입력한 항공 일정은 이 기기의 앱 저장공간에만 보관됩니다.
+            항공권 원본과 OCR 전문은 저장하지 않고, 확인한 일정만 이 기기에 보관합니다.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -170,6 +206,10 @@ const styles = StyleSheet.create({
   introIcon: { width: 50, height: 50, borderRadius: 17, backgroundColor: colors.blue, alignItems: "center", justifyContent: "center", marginBottom: 13 },
   introTitle: { color: colors.text, fontSize: 21, lineHeight: 26, fontWeight: "900", letterSpacing: -0.5 },
   introDescription: { color: colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 7 },
+  scanButton: { minHeight: 50, borderRadius: radius.md, backgroundColor: colors.primary, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, marginTop: 12, paddingHorizontal: 12 },
+  scanButtonDisabled: { opacity: 0.6 },
+  scanButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900", textAlign: "center" },
+  scanMessage: { color: colors.teal, fontSize: 11, lineHeight: 16, textAlign: "center", marginTop: 7, paddingHorizontal: 8 },
   section: { borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: 14, marginTop: 12 },
   sectionHeading: { flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 10 },
   sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "900" },
