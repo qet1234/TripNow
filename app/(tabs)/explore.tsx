@@ -5,16 +5,22 @@ import { Screen } from "@/src/components/Screen";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { mockPlaces } from "@/src/data/mockJapan";
 import { getJapanRegion, japanRegions } from "@/src/data/japanRegions";
-import { openGoogleMapsDirections } from "@/src/services/navigation";
+import { openGoogleMapsDirections, openGoogleMapsSearch } from "@/src/services/navigation";
 import { colors, radius } from "@/src/theme";
 
 const filters = ["맛집", "카페", "관광", "쇼핑"] as const;
+const restaurantCategories = ["스시", "라멘", "야키니쿠", "카페"] as const;
 
 export default function ExploreScreen() {
   const { selectedRegionId, setSelectedRegionId, mode } = useTravelMode();
   const [activeFilter, setActiveFilter] = useState<(typeof filters)[number]>("맛집");
   const region = getJapanRegion(selectedRegionId);
   const places = selectedRegionId === "tokyo-shibuya" ? mockPlaces : [];
+
+  const openRestaurantSearch = (category?: (typeof restaurantCategories)[number]) => {
+    const keyword = category ?? "맛집";
+    return openGoogleMapsSearch(`${region.city} ${region.area} ${keyword}`);
+  };
 
   const markers = places.length > 0
     ? places.map((place, index) => ({
@@ -60,6 +66,34 @@ export default function ExploreScreen() {
         <Text style={styles.modeNoteText}>{mode === "local" ? "현지 모드" : "미리보기"} · 선택 지역 기준으로 표시합니다.</Text>
       </View>
 
+      <View style={styles.restaurantSearchCard}>
+        <Text style={styles.restaurantSearchTitle}>{region.area} 맛집 찾기</Text>
+        <Text style={styles.restaurantSearchDescription}>
+          Google Maps에서 검색 결과를 열어 비교하고 길찾기까지 이어갈 수 있어요.
+        </Text>
+        <Pressable
+          accessibilityHint="Google Maps 검색 결과를 엽니다"
+          accessibilityRole="link"
+          onPress={() => openRestaurantSearch()}
+          style={styles.restaurantSearchButton}
+        >
+          <Text style={styles.restaurantSearchButtonText}>{region.area} 맛집 보기 ↗</Text>
+        </Pressable>
+        <View style={styles.restaurantCategories}>
+          {restaurantCategories.map((category) => (
+            <Pressable
+              accessibilityHint={`Google Maps에서 ${region.area} ${category} 검색 결과를 엽니다`}
+              accessibilityRole="link"
+              key={category}
+              onPress={() => openRestaurantSearch(category)}
+              style={styles.restaurantCategory}
+            >
+              <Text style={styles.restaurantCategoryText}>{category}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
       <View style={styles.mapCard}>
         <ExploreMap key={selectedRegionId} region={region} markers={markers} />
         <View style={styles.mapLabel}><Text style={styles.mapLabelText}>{region.label}</Text></View>
@@ -101,6 +135,14 @@ const styles = StyleSheet.create({
   modeNote: { flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 8 },
   modeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.teal },
   modeNoteText: { color: colors.textMuted, fontSize: 11 },
+  restaurantSearchCard: { marginBottom: 14, padding: 14, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+  restaurantSearchTitle: { color: colors.text, fontSize: 17, fontWeight: "900" },
+  restaurantSearchDescription: { marginTop: 5, color: colors.textMuted, fontSize: 12, lineHeight: 18 },
+  restaurantSearchButton: { marginTop: 12, minHeight: 46, borderRadius: radius.sm, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", paddingHorizontal: 14 },
+  restaurantSearchButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" },
+  restaurantCategories: { marginTop: 10, flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  restaurantCategory: { minWidth: 72, flexGrow: 1, minHeight: 38, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.primary, alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
+  restaurantCategoryText: { color: colors.primary, fontSize: 12, fontWeight: "800" },
   mapCard: { height: 360, borderRadius: radius.lg, overflow: "hidden", borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   mapLabel: { position: "absolute", left: 12, top: 12, backgroundColor: "rgba(255,255,255,0.92)", borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 7 },
   mapLabelText: { color: colors.text, fontSize: 11, fontWeight: "800" },
