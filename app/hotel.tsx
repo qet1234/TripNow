@@ -22,6 +22,10 @@ import {
   type HotelDraft,
   type StoredHotel,
 } from "@/src/services/hotelOcr";
+import {
+  openGoogleMapsDirections,
+  type GoogleMapsTravelMode,
+} from "@/src/services/navigation";
 import { colors, radius } from "@/src/theme";
 
 type Field = keyof HotelDraft;
@@ -35,6 +39,16 @@ const fields: ReadonlyArray<{
   { key: "address", label: "주소", placeholder: "예: 東京都渋谷区渋谷 3-21-3" },
   { key: "checkIn", label: "체크인", placeholder: "예: 2026.10.12 15:00" },
   { key: "checkOut", label: "체크아웃", placeholder: "예: 2026.10.15 11:00" },
+];
+
+const directions: ReadonlyArray<{
+  label: string;
+  mode: GoogleMapsTravelMode;
+  icon: "train-car" | "walk" | "car-outline";
+}> = [
+  { label: "대중교통", mode: "transit", icon: "train-car" },
+  { label: "도보", mode: "walking", icon: "walk" },
+  { label: "자동차", mode: "driving", icon: "car-outline" },
 ];
 
 export default function HotelScreen() {
@@ -116,6 +130,26 @@ export default function HotelScreen() {
         },
       ],
     );
+  };
+
+  const handleDirections = async (travelMode: GoogleMapsTravelMode) => {
+    if (!storedHotel) return;
+
+    const destination = [storedHotel.hotelName, storedHotel.address]
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .join(" ");
+
+    if (!destination) {
+      setMessage("길찾기에 사용할 호텔명이나 주소가 없습니다.");
+      return;
+    }
+
+    try {
+      await openGoogleMapsDirections(destination, { travelMode });
+    } catch {
+      setMessage("Google Maps를 열지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    }
   };
 
   return (
@@ -224,10 +258,42 @@ export default function HotelScreen() {
       </View>
 
       {storedHotel ? (
-        <Pressable accessibilityRole="button" onPress={handleDelete} style={styles.deleteButton}>
-          <MaterialCommunityIcons color={colors.danger} name="delete-outline" size={20} />
-          <Text style={styles.deleteText}>이 기기의 호텔 정보 삭제</Text>
-        </Pressable>
+        <>
+          <View style={styles.savedCard}>
+            <View style={styles.savedHeading}>
+              <View style={styles.savedIcon}>
+                <MaterialCommunityIcons color="#157A55" name="map-marker-check-outline" size={23} />
+              </View>
+              <View style={styles.savedCopy}>
+                <Text style={styles.savedLabel}>저장된 호텔</Text>
+                <Text numberOfLines={1} style={styles.savedName}>{storedHotel.hotelName}</Text>
+              </View>
+            </View>
+            <Text style={styles.savedAddress}>{storedHotel.address}</Text>
+            <Text style={styles.directionsTitle}>호텔로 길찾기</Text>
+            <View style={styles.directionsRow}>
+              {directions.map((item) => (
+                <Pressable
+                  accessibilityLabel={`${item.label}으로 호텔 길찾기`}
+                  accessibilityRole="button"
+                  key={item.mode}
+                  onPress={() => void handleDirections(item.mode)}
+                  style={({ pressed }) => [styles.directionButton, pressed && styles.buttonPressed]}
+                >
+                  <MaterialCommunityIcons color="#FFFFFF" name={item.icon} size={19} />
+                  <Text style={styles.directionButtonText}>{item.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.directionsNotice}>
+              선택한 경우에만 저장된 호텔명과 주소를 Google Maps에 목적지로 전달합니다.
+            </Text>
+          </View>
+          <Pressable accessibilityRole="button" onPress={handleDelete} style={styles.deleteButton}>
+            <MaterialCommunityIcons color={colors.danger} name="delete-outline" size={20} />
+            <Text style={styles.deleteText}>이 기기의 호텔 정보 삭제</Text>
+          </Pressable>
+        </>
       ) : null}
     </Screen>
   );
@@ -262,6 +328,18 @@ const styles = StyleSheet.create({
   ruleCard: { marginTop: 14, borderRadius: radius.md, backgroundColor: "#F0F1F4", padding: 15 },
   ruleTitle: { color: colors.text, fontSize: 13, fontWeight: "900", marginBottom: 7 },
   ruleText: { color: colors.textMuted, fontSize: 10, lineHeight: 17 },
+  savedCard: { marginTop: 14, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: "#CFE7DC", padding: 16 },
+  savedHeading: { flexDirection: "row", alignItems: "center", gap: 10 },
+  savedIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.tealSoft, alignItems: "center", justifyContent: "center" },
+  savedCopy: { flex: 1 },
+  savedLabel: { color: colors.textMuted, fontSize: 10, fontWeight: "800" },
+  savedName: { color: colors.text, fontSize: 16, fontWeight: "900", marginTop: 3 },
+  savedAddress: { color: "#52636C", fontSize: 11, lineHeight: 17, marginTop: 10 },
+  directionsTitle: { color: colors.text, fontSize: 13, fontWeight: "900", marginTop: 16 },
+  directionsRow: { flexDirection: "row", gap: 7, marginTop: 9 },
+  directionButton: { flex: 1, minHeight: 44, borderRadius: 13, backgroundColor: "#157A55", alignItems: "center", justifyContent: "center", gap: 3 },
+  directionButtonText: { color: "#FFFFFF", fontSize: 10, fontWeight: "900" },
+  directionsNotice: { color: colors.textMuted, fontSize: 9, lineHeight: 14, marginTop: 9 },
   deleteButton: { height: 46, marginTop: 12, borderRadius: 14, borderWidth: 1, borderColor: "#F0C8CB", backgroundColor: colors.dangerSoft, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   deleteText: { color: colors.danger, fontSize: 12, fontWeight: "900" },
 });
