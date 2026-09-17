@@ -110,14 +110,23 @@ function parseFlightDate(text: string) {
 }
 
 function findAirportCodes(text: string) {
+  const explicit = (text.toUpperCase().match(/\b[A-Z]{3}\b/g) ?? [])
+    .filter((code) => airportAliases.some((airport) => airport.code === code))
+    .map((code) => ({ code, index: text.toUpperCase().indexOf(code) }));
   const aliases = airportAliases
-    .filter((airport) => airport.pattern.test(text))
-    .map((airport) => airport.code);
-  const explicit = (text.toUpperCase().match(/\b[A-Z]{3}\b/g) ?? []).filter((code) =>
-    airportAliases.some((airport) => airport.code === code),
-  );
+    .map((airport) => {
+      const match = airport.pattern.exec(text);
+      return match?.index == null ? null : { code: airport.code, index: match.index };
+    })
+    .filter((item): item is { code: string; index: number } => item !== null);
 
-  return [...new Set([...aliases, ...explicit])];
+  return [
+    ...new Set(
+      [...explicit, ...aliases]
+        .sort((left, right) => left.index - right.index)
+        .map((item) => item.code),
+    ),
+  ];
 }
 
 function airportCity(code: string) {
@@ -125,9 +134,19 @@ function airportCity(code: string) {
 }
 
 function findLabeledAirport(lines: string[], label: RegExp) {
-  const line = lines.find((item) => label.test(item));
-  if (!line) return "";
-  return findAirportCodes(line)[0] ?? "";
+  for (const line of lines) {
+    const match = label.exec(line);
+    if (!match) continue;
+
+    const afterLabel = line.slice((match.index ?? 0) + match[0].length);
+    const afterCode = findAirportCodes(afterLabel)[0];
+    if (afterCode) return afterCode;
+
+    const beforeLabel = findAirportCodes(line.slice(0, match.index ?? 0));
+    if (beforeLabel.length > 0) return beforeLabel[beforeLabel.length - 1];
+  }
+
+  return "";
 }
 
 function parseFlightNumber(text: string) {
