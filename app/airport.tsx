@@ -88,7 +88,7 @@ export default function AirportScreen() {
   };
 
   return (
-    <Screen>
+    <Screen scroll={false}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
