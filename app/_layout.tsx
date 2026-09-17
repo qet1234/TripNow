@@ -3,6 +3,7 @@ import { useFonts } from "expo-font";
 import "react-native-url-polyfill/auto";
 import { Stack } from "expo-router";
 import { ScheduleProvider } from "@/src/context/ScheduleContext";
+import { AirportProvider } from "@/src/context/AirportContext";
 import { TravelModeProvider } from "@/src/context/TravelModeContext";
 
 export default function RootLayout() {
@@ -15,11 +16,14 @@ export default function RootLayout() {
   return (
     <TravelModeProvider>
       <ScheduleProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="hotel" options={{ presentation: "card" }} />
-          <Stack.Screen name="schedule-edit" options={{ presentation: "modal" }} />
-        </Stack>
+        <AirportProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="airport" options={{ presentation: "card" }} />
+            <Stack.Screen name="hotel" options={{ presentation: "card" }} />
+            <Stack.Screen name="schedule-edit" options={{ presentation: "modal" }} />
+          </Stack>
+        </AirportProvider>
       </ScheduleProvider>
     </TravelModeProvider>
   );
