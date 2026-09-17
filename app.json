@@ -2,6 +2,7 @@
   "expo": {
     "name": "트립나우",
     "slug": "tripnow",
+    "owner": "use1234",
     "version": "0.1.0",
     "platforms": ["android", "web"],
     "orientation": "portrait",
@@ -27,6 +28,11 @@
     "web": {
       "bundler": "metro",
       "output": "static"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5a142dbc-4fe5-4b61-8aa9-32b8aa2c0a9c"
+      }
     }
   }
 }
