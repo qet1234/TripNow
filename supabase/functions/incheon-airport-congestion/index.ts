@@ -134,17 +134,21 @@ function arrivalItems(rows: Record<string, unknown>[], requestedFlightId: string
 
 function departureItems(rows: Record<string, unknown>[]) {
   return rows.slice(0, 6).map((row, index) => {
-    const hall = pick(row, "departureHall", "departurehall", "hallNo", "hallno", "gateNo", "gateno", "gate");
+    const hall = pick(row, "gateId", "gateid", "departureHall", "departurehall", "hallNo", "hallno", "gateNo", "gateno", "gate");
+    const waitTime = numberValue(pick(row, "waitTime", "waittime"));
+    const operatingTime = pick(row, "operatingTime", "operatingtime");
     return {
       id: `departure-${hall || index}`,
       label: hall ? `출국장 ${hall}` : `출국장 ${index + 1}`,
-      zone: pick(row, "gateArea", "gatearea", "hallType", "halltype", "eastWest", "eastwest"),
-      waitingPeople: numberValue(pick(row, "waitCount", "waitcount", "waitingCount", "waitingcount", "passengerCount", "passengercount")),
+      zone: [waitTime > 0 ? `예상 대기 ${waitTime}분` : "", operatingTime ? `운영 ${operatingTime}` : ""]
+        .filter(Boolean)
+        .join(" · "),
+      waitingPeople: numberValue(pick(row, "waitLength", "waitlength", "waitCount", "waitcount", "waitingCount", "waitingcount", "passengerCount", "passengercount")),
       korean: 0,
       foreigner: 0,
       flightId: "",
       gate: "",
-      observedAt: pick(row, "occurredAt", "occurredat", "recordedAt", "recordedat", "createdAt", "createdat"),
+      observedAt: pick(row, "occurtime", "occurTime", "occurredAt", "occurredat", "recordedAt", "recordedat", "createdAt", "createdat"),
     };
   });
 }
@@ -202,7 +206,7 @@ Deno.serve(async (request: Request) => {
 
     const url = phase === "arrival"
       ? new URL("https://apis.data.go.kr/B551177/StatusOfArrivals/getArrivalsCongestion")
-      : new URL(Deno.env.get("DATA_GO_KR_DEPARTURE_CONGESTION_URL")?.trim() || "https://apis.data.go.kr/B551177/StatusOfDepartures/getDeparturesCongestion");
+      : new URL(Deno.env.get("DATA_GO_KR_DEPARTURE_CONGESTION_URL")?.trim() || "https://apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion");
     url.searchParams.set("serviceKey", normalizeServiceKey(rawServiceKey));
 
     if (phase === "arrival") {
@@ -212,6 +216,8 @@ Deno.serve(async (request: Request) => {
       if (airportCode) url.searchParams.set("airport", airportCode);
       url.searchParams.set("type", "json");
     } else {
+      url.searchParams.set("numOfRows", "10");
+      url.searchParams.set("pageNo", "1");
       url.searchParams.set("terminalId", "P01");
       url.searchParams.set("type", "json");
     }
