@@ -181,7 +181,7 @@ Deno.serve(async (request: Request) => {
         terminal,
         availability: "unsupported",
         items: [],
-        sourceNotice: "공식 출국장 혼잡도 API는 현재 제1여객터미널만 제공합니다.",
+        sourceNotice: "현재 출국장 혼잡도 요청 명세는 제1여객터미널(P01)만 제공하며, 제2여객터미널은 추후 제공 예정입니다.",
         refreshedAt: new Date().toISOString(),
       } satisfies CongestionPayload);
     }
@@ -204,9 +204,11 @@ Deno.serve(async (request: Request) => {
       }, 503);
     }
 
+    const departureUrl = Deno.env.get("DATA_GO_KR_DEPARTURE_CONGESTION_URL")?.trim() ||
+      "https://apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion";
     const url = phase === "arrival"
       ? new URL("https://apis.data.go.kr/B551177/StatusOfArrivals/getArrivalsCongestion")
-      : new URL(Deno.env.get("DATA_GO_KR_DEPARTURE_CONGESTION_URL")?.trim() || "https://apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion");
+      : new URL(departureUrl);
     url.searchParams.set("serviceKey", normalizeServiceKey(rawServiceKey));
 
     if (phase === "arrival") {
@@ -250,7 +252,7 @@ Deno.serve(async (request: Request) => {
       availability: "live",
       items: phase === "arrival" ? arrivalItems(rows, flightId) : departureItems(rows),
       sourceNotice: phase === "departure"
-        ? "제1여객터미널 출국장 대기 인원"
+        ? `제${terminal}여객터미널 출국장 대기 인원`
         : "현재 시각 전후 2시간 입국장 대기 인원",
       refreshedAt: new Date().toISOString(),
     };
