@@ -1,5 +1,6 @@
 import { getJapanRegion } from "@/src/data/japanRegions";
 import { supabase, supabaseConfigured } from "@/src/lib/supabase";
+import type { PlaceCategory, PlacePreview } from "@/src/types/travel";
 
 export type PlaceSuggestion = {
   placeId: string;
@@ -77,4 +78,66 @@ export async function fetchJapanPlaceDetails(placeId: string) {
   }
 
   return data.data;
+}
+
+
+type NearbyPlace = {
+  placeId: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  googleMapsUri?: string;
+  primaryType?: string;
+  types?: string[];
+};
+
+function typeLabel(value: string) {
+  return value.replaceAll("_", " ").trim();
+}
+
+export async function fetchNearbyJapanPlaces(
+  regionId: string,
+  category: PlaceCategory,
+): Promise<PlacePreview[]> {
+  if (!supabaseConfigured) return [];
+
+  const region = getJapanRegion(regionId);
+  const { data, error } = await supabase.functions.invoke<
+    FunctionResponse<{ places: NearbyPlace[]; cached?: boolean }>
+  >("google-places", {
+    body: {
+      action: "nearby",
+      category,
+      latitude: region.latitude,
+      longitude: region.longitude,
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message || "주변 장소 요청에 실패했습니다.");
+  }
+  if (data?.error) {
+    throw new Error(data.error);
+  }
+
+  return (data?.data?.places ?? []).map((place) => ({
+    id: place.placeId,
+    name: place.name,
+    category,
+    cityId: region.cityId,
+    regionId: region.id,
+    areaLabel: region.label,
+    address: place.address,
+    description: "Google Places에서 불러온 장소입니다.",
+    latitude: place.latitude,
+    longitude: place.longitude,
+    hoursLabel: "영업시간은 Google Maps에서 확인",
+    mapQuery: [place.name, place.address].filter(Boolean).join(" "),
+    tags: [place.primaryType ?? "", ...(place.types ?? [])]
+      .filter(Boolean)
+      .map(typeLabel)
+      .filter((value, index, values) => values.indexOf(value) === index)
+      .slice(0, 3),
+  }));
 }
