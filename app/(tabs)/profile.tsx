@@ -1,17 +1,20 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import { Screen } from "@/src/components/Screen";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { getJapanRegion } from "@/src/data/japanRegions";
 import { colors, radius } from "@/src/theme";
 
 const menus = [
-  { icon: "♡", label: "저장한 장소", count: "12" },
-  { icon: "▣", label: "내 여행 일정", count: "1" },
-  { icon: "♢", label: "도착 알림 관리", count: "2" },
-  { icon: "⚙", label: "앱 설정", count: "" },
+  { icon: "♡", label: "저장한 장소", count: "12", route: null },
+  { icon: "▣", label: "내 여행 일정", count: "1", route: "/schedule" },
+  { icon: "¥", label: "결제 알림 경비", count: "", route: "/expenses" },
+  { icon: "♢", label: "도착 알림 관리", count: "2", route: null },
+  { icon: "⚙", label: "앱 설정", count: "", route: null },
 ] as const;
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { mode, selectedRegionId } = useTravelMode();
   const region = getJapanRegion(selectedRegionId);
 
@@ -35,7 +38,7 @@ export default function ProfileScreen() {
 
       <View style={styles.menuCard}>
         {menus.map((menu, index) => (
-          <Pressable key={menu.label} style={[styles.menu, index < menus.length - 1 && styles.menuBorder]}>
+          <Pressable key={menu.label} onPress={() => menu.route && router.push(menu.route)} style={[styles.menu, index < menus.length - 1 && styles.menuBorder]}>
             <View style={styles.menuIcon}><Text style={styles.menuIconText}>{menu.icon}</Text></View>
             <Text style={styles.menuLabel}>{menu.label}</Text>
             {menu.count ? <Text style={styles.count}>{menu.count}</Text> : null}
