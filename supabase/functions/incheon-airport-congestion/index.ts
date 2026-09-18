@@ -188,9 +188,16 @@ Deno.serve(async (request: Request) => {
       return jsonResponse({ ...cached.value, cached: true });
     }
 
-    const rawServiceKey = Deno.env.get("DATA_GO_KR_SERVICE_KEY")?.trim();
+    const secretName = phase === "arrival"
+      ? "DATA_GO_KR_ARRIVAL_CONGESTION_SERVICE_KEY"
+      : "DATA_GO_KR_DEPARTURE_CONGESTION_SERVICE_KEY";
+    const rawServiceKey = Deno.env.get(secretName)?.trim();
     if (!rawServiceKey) {
-      return jsonResponse({ error: "인천공항 API 인증키가 아직 설정되지 않았습니다." }, 503);
+      return jsonResponse({
+        error: phase === "arrival"
+          ? "입국장 현황 API 인증키가 아직 설정되지 않았습니다."
+          : "출국장 혼잡도 API 인증키가 아직 설정되지 않았습니다.",
+      }, 503);
     }
 
     const url = phase === "arrival"
