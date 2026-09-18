@@ -7,6 +7,7 @@ import { Screen } from "@/src/components/Screen";
 import { useSavedPlaces } from "@/src/context/SavedPlacesContext";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { mockPlaces } from "@/src/data/mockJapan";
+import { fetchNearbyJapanPlaces } from "@/src/services/places";
 import { getJapanRegion, getJapanRegionsByCity, japanCities } from "@/src/data/japanRegions";
 import { openGoogleMapsDirections, openGoogleMapsSearch } from "@/src/services/navigation";
 import { colors, radius } from "@/src/theme";
@@ -37,12 +38,42 @@ export default function ExploreScreen() {
   const [query, setQuery] = useState("");
   const [selectedPlaceId, setSelectedPlaceId] = useState("");
   const [savedOnly, setSavedOnly] = useState(false);
+  const [livePlaces, setLivePlaces] = useState<PlacePreview[]>([]);
+  const [livePlacesLoading, setLivePlacesLoading] = useState(false);
+  const [livePlacesError, setLivePlacesError] = useState("");
   const region = getJapanRegion(selectedRegionId);
   const cityRegions = getJapanRegionsByCity(region.cityId);
 
+  useEffect(() => {
+    let active = true;
+    setLivePlacesLoading(true);
+    setLivePlacesError("");
+
+    void fetchNearbyJapanPlaces(
+      selectedRegionId,
+      categoryByFilter[activeFilter],
+    )
+      .then((nextPlaces) => {
+        if (!active) return;
+        setLivePlaces(nextPlaces);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLivePlaces([]);
+        setLivePlacesError("실시간 장소 조회가 지연되어 추천 샘플을 표시합니다.");
+      })
+      .finally(() => {
+        if (active) setLivePlacesLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activeFilter, selectedRegionId]);
+
   const places = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
-    const source = savedOnly ? savedPlaces : mockPlaces;
+    const source = savedOnly ? savedPlaces : livePlaces.length > 0 ? livePlaces : mockPlaces;
     return source.filter((place) => {
       if (place.cityId !== region.cityId || place.category !== categoryByFilter[activeFilter]) return false;
       if (!normalizedQuery) return true;
@@ -51,7 +82,7 @@ export default function ExploreScreen() {
         .toLocaleLowerCase()
         .includes(normalizedQuery);
     });
-  }, [activeFilter, query, region.cityId, savedOnly, savedPlaces]);
+  }, [activeFilter, livePlaces, query, region.cityId, savedOnly, savedPlaces]);
 
   useEffect(() => {
     if (!places.some((place) => place.id === selectedPlaceId)) {
@@ -83,7 +114,7 @@ export default function ExploreScreen() {
       params: {
         regionId: place.regionId,
         title: place.name,
-        placeId: `mock:${place.id}`,
+        placeId: place.id,
         placeQuery: place.mapQuery,
         placeAddress: place.address,
         placeLatitude: String(place.latitude),
@@ -167,7 +198,13 @@ export default function ExploreScreen() {
 
       <View style={styles.previewNotice}>
         <MaterialCommunityIcons color={colors.blue} name="information-outline" size={18} />
-        <Text style={styles.previewNoticeText}>현재 추천 샘플 데이터입니다. 실제 영업시간은 지도에서 확인해 주세요.</Text>
+        <Text style={styles.previewNoticeText}>
+          {livePlacesLoading
+            ? "Google Places에서 주변 장소를 불러오는 중입니다."
+            : livePlaces.length > 0
+              ? "Google Places 실시간 검색 결과입니다. 영업시간은 지도에서 최종 확인해 주세요."
+              : livePlacesError || "추천 샘플 데이터입니다. 실제 영업시간은 지도에서 확인해 주세요."}
+        </Text>
       </View>
 
       <View style={styles.mapHeader}>
