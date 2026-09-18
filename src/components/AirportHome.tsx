@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { Screen } from "@/src/components/Screen";
+import { AirportCongestionCard } from "@/src/components/AirportCongestionCard";
 import type { AirportFlightPlan, AirportPhase } from "@/src/context/AirportContext";
 import {
   getIncheonFlightStatus,
@@ -197,6 +198,15 @@ export function AirportHome({
         </View>
       </View>
 
+      <AirportCongestionCard
+        accent={accent}
+        airportCode={liveStatus?.airportCode}
+        flightId={flight}
+        phase={phase}
+        soft={soft}
+        terminal={terminal}
+      />
+
       <View style={styles.actionList}>
         <Pressable onPress={onOpenSetup} style={[styles.primaryButton, { backgroundColor: accent }]}>
           <MaterialCommunityIcons color="#FFFFFF" name="information-outline" size={20} />
@@ -259,3 +269,4 @@ const styles = StyleSheet.create({
   secondaryButtonText: { color: colors.text, fontSize: 12, fontWeight: "900" },
   note: { color: colors.textMuted, fontSize: 10, lineHeight: 15, textAlign: "center", marginTop: 15, paddingHorizontal: 12 },
 });
+
