@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { File } from "expo-file-system";
+import { File as ExpoFile } from "expo-file-system";
 import {
   isHotelOcrAvailable,
   recognizeHotelImage,
@@ -23,6 +23,135 @@ type FlightFields = Pick<
 export type FlightOcrDraft = Partial<FlightFields>;
 
 const MAX_FIELD_LENGTH = 80;
+
+const WEB_TESSERACT_URL =
+  "https://cdn.jsdelivr.net/npm/tesseract.js@7/dist/tesseract.min.js";
+
+type WebTesseractWorker = {
+  recognize(image: Blob | string): Promise<{ data: { text: string } }>;
+  terminate(): Promise<unknown>;
+};
+
+type WebTesseract = {
+  createWorker(languages: string | string[]): Promise<WebTesseractWorker>;
+};
+
+function getWebTesseract() {
+  return (
+    globalThis as typeof globalThis & {
+      Tesseract?: WebTesseract;
+    }
+  ).Tesseract;
+}
+
+function loadWebTesseract() {
+  const existing = getWebTesseract();
+  if (existing) return Promise.resolve(existing);
+
+  return new Promise<WebTesseract>((resolve, reject) => {
+    if (typeof document === "undefined") {
+      reject(new Error("웹 브라우저에서만 항공권 사진 OCR을 사용할 수 있습니다."));
+      return;
+    }
+
+    const alreadyLoading = document.querySelector<HTMLScriptElement>(
+      'script[data-tripnow-tesseract="true"]',
+    );
+
+    const finish = () => {
+      const loaded = getWebTesseract();
+      if (loaded) resolve(loaded);
+      else reject(new Error("웹 OCR 모듈을 불러오지 못했습니다. 네트워크 상태를 확인해 주세요."));
+    };
+
+    if (alreadyLoading) {
+      alreadyLoading.addEventListener("load", finish, { once: true });
+      alreadyLoading.addEventListener(
+        "error",
+        () => reject(new Error("웹 OCR 모듈을 불러오지 못했습니다.")),
+        { once: true },
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = WEB_TESSERACT_URL;
+    script.async = true;
+    script.dataset.tripnowTesseract = "true";
+    script.addEventListener("load", finish, { once: true });
+    script.addEventListener(
+      "error",
+      () => reject(new Error("웹 OCR 모듈을 불러오지 못했습니다.")),
+      { once: true },
+    );
+    document.head.appendChild(script);
+  });
+}
+
+function pickWebImage(): Promise<globalThis.File | null> {
+  return new Promise((resolve) => {
+    if (typeof document === "undefined" || typeof window === "undefined") {
+      resolve(null);
+      return;
+    }
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.style.display = "none";
+
+    let settled = false;
+    const finish = (file: globalThis.File | null) => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener("focus", handleFocus);
+      input.remove();
+      resolve(file);
+    };
+
+    const handleFocus = () => {
+      window.setTimeout(() => {
+        finish(input.files?.[0] ?? null);
+      }, 500);
+    };
+
+    input.addEventListener(
+      "change",
+      () => finish(input.files?.[0] ?? null),
+      { once: true },
+    );
+    window.addEventListener("focus", handleFocus, { once: true });
+    document.body.appendChild(input);
+    input.click();
+  });
+}
+
+async function scanWebBoardingPass(): Promise<FlightOcrDraft | null> {
+  const image = await pickWebImage();
+  if (!image) return null;
+
+  if (!image.type.startsWith("image/")) {
+    throw new Error("항공권 사진 파일을 선택해 주세요.");
+  }
+  if (image.size > 15 * 1024 * 1024) {
+    throw new Error("항공권 사진은 15MB 이하 파일을 사용해 주세요.");
+  }
+
+  const tesseract = await loadWebTesseract();
+  let worker: WebTesseractWorker | null = null;
+  let rawText = "";
+
+  try {
+    worker = await tesseract.createWorker(["eng", "kor", "jpn"]);
+    const result = await worker.recognize(image);
+    rawText = result.data.text;
+    return parseFlightText(rawText);
+  } finally {
+    rawText = "";
+    await worker?.terminate().catch(() => undefined);
+  }
+}
+
 
 const airportAliases: ReadonlyArray<{
   code: string;
@@ -243,15 +372,22 @@ function parseFlightText(text: string): FlightOcrDraft {
 }
 
 export function canUseFlightOcr() {
+  if (Platform.OS === "web") {
+    return typeof document !== "undefined";
+  }
   return Platform.OS === "android" && isHotelOcrAvailable();
 }
 
 export async function scanFlightBoardingPass(): Promise<FlightOcrDraft | null> {
-  if (!canUseFlightOcr()) {
-    throw new Error("항공권 OCR은 Android 설치 앱에서만 사용할 수 있습니다.");
+  if (Platform.OS === "web") {
+    return scanWebBoardingPass();
   }
 
-  const selection = await File.pickFileAsync({
+  if (!canUseFlightOcr()) {
+    throw new Error("항공권 OCR은 Android 설치 앱 또는 웹에서 사용할 수 있습니다.");
+  }
+
+  const selection = await ExpoFile.pickFileAsync({
     mimeTypes: ["image/*"],
     multipleFiles: false,
   });
