@@ -89,24 +89,31 @@ function parseFlightDate(text: string) {
     return toIsoDate(Number(korean[1]), Number(korean[2]), Number(korean[3]));
   }
 
-  const named =
-    text.match(
-      /\b(\d{1,2})\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*(20\d{2})?\b/i,
-    ) ??
-    text.match(
-      /\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*(\d{1,2})(?:,\s*)?(20\d{2})?\b/i,
+  const dayFirst = text.match(
+    /\b(\d{1,2})\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*(20\d{2})?\b/i,
+  );
+  if (dayFirst) {
+    const year = dayFirst[3] ? Number(dayFirst[3]) : new Date().getFullYear();
+    return toIsoDate(
+      year,
+      monthNames[dayFirst[2].toUpperCase()],
+      Number(dayFirst[1]),
     );
+  }
 
-  if (!named) return "";
+  const monthFirst = text.match(
+    /\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*(\d{1,2})(?:,\s*)?(20\d{2})?\b/i,
+  );
+  if (!monthFirst) return "";
 
-  const first = named[1].toUpperCase();
-  const second = named[2];
-  const monthToken = monthNames[first] ? first : second.toUpperCase();
-  const dayToken = monthNames[first] ? second : named[2];
-  const yearToken = named[3] ?? named[4];
-  const year = yearToken ? Number(yearToken) : new Date().getFullYear();
-
-  return toIsoDate(year, monthNames[monthToken], Number(dayToken));
+  const year = monthFirst[3]
+    ? Number(monthFirst[3])
+    : new Date().getFullYear();
+  return toIsoDate(
+    year,
+    monthNames[monthFirst[1].toUpperCase()],
+    Number(monthFirst[2]),
+  );
 }
 
 function findAirportCodes(text: string) {
@@ -150,10 +157,12 @@ function findLabeledAirport(lines: string[], label: RegExp) {
 }
 
 function parseFlightNumber(text: string) {
-  const candidates = text.toUpperCase().match(/\b[A-Z]{2}\s?\d{2,4}\b/g) ?? [];
+  const candidates =
+    text.toUpperCase().match(/\b[A-Z0-9]{2}\s?\d{2,4}\b/g) ?? [];
   return (
     candidates
       .map((value) => value.replace(/\s+/g, ""))
+      .filter((value) => /[A-Z]/.test(value.slice(0, 2)))
       .find((value) => !airportAliases.some((airport) => value === airport.code)) ?? ""
   );
 }
