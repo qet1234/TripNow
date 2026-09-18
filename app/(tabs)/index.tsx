@@ -23,12 +23,12 @@ type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 const quickActions: ReadonlyArray<{
   label: string;
   icon: IconName;
-  route: "/airport" | "/hotel" | "/profile" | "/travel";
+  route: "/airport" | "/hotel" | "/profile" | "/travel" | "/expenses";
   warm?: boolean;
 }> = [
   { label: "호텔 주소", icon: "bed-king-outline", route: "/hotel" },
   { label: "쿠폰", icon: "ticket-percent-outline", route: "/travel" },
-  { label: "여행 경비", icon: "wallet-outline", route: "/profile" },
+  { label: "여행 경비", icon: "wallet-outline", route: "/expenses" },
   { label: "공항 안내", icon: "airplane-takeoff", route: "/airport", warm: true },
 ];
 
@@ -300,7 +300,7 @@ export default function HomeScreen() {
       </View>
 
       <Pressable
-        onPress={() => router.push("/profile")}
+        onPress={() => router.push("/expenses")}
         style={[styles.budgetCard, { backgroundColor: region.softStrong }]}
       >
         <View style={[styles.budgetIcon, { backgroundColor: region.accent }]}> 
