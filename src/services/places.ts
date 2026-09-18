@@ -121,23 +121,38 @@ export async function fetchNearbyJapanPlaces(
     throw new Error(data.error);
   }
 
-  return (data?.data?.places ?? []).map((place) => ({
-    id: place.placeId,
-    name: place.name,
-    category,
-    cityId: region.cityId,
-    regionId: region.id,
-    areaLabel: region.label,
-    address: place.address,
-    description: "Google Places에서 불러온 장소입니다.",
-    latitude: place.latitude,
-    longitude: place.longitude,
-    hoursLabel: "영업시간은 Google Maps에서 확인",
-    mapQuery: [place.name, place.address].filter(Boolean).join(" "),
-    tags: [place.primaryType ?? "", ...(place.types ?? [])]
-      .filter(Boolean)
-      .map(typeLabel)
-      .filter((value, index, values) => values.indexOf(value) === index)
-      .slice(0, 3),
-  }));
+  const seen = new Set<string>();
+
+  return (data?.data?.places ?? [])
+    .filter((place) => {
+      if (!place.placeId || !place.name || seen.has(place.placeId)) return false;
+      if (!Number.isFinite(place.latitude) || !Number.isFinite(place.longitude)) return false;
+      if (
+        Math.abs(place.latitude - region.latitude) > 0.08 ||
+        Math.abs(place.longitude - region.longitude) > 0.1
+      ) {
+        return false;
+      }
+      seen.add(place.placeId);
+      return true;
+    })
+    .map((place) => ({
+      id: place.placeId,
+      name: place.name,
+      category,
+      cityId: region.cityId,
+      regionId: region.id,
+      areaLabel: region.label,
+      address: place.address,
+      description: "Google Places에서 불러온 장소입니다.",
+      latitude: place.latitude,
+      longitude: place.longitude,
+      hoursLabel: "영업시간은 Google Maps에서 확인",
+      mapQuery: [place.name, place.address].filter(Boolean).join(" "),
+      tags: [place.primaryType ?? "", ...(place.types ?? [])]
+        .filter(Boolean)
+        .map(typeLabel)
+        .filter((value, index, values) => values.indexOf(value) === index)
+        .slice(0, 3),
+    }));
 }
