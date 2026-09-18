@@ -23,9 +23,25 @@ function getLocalDateString() {
   return `${year}-${month}-${day}`;
 }
 
+function getOptionalCoordinate(value?: string) {
+  if (!value) return undefined;
+  const coordinate = Number(value);
+  return Number.isFinite(coordinate) ? coordinate : undefined;
+}
+
 export default function ScheduleEditScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string; regionId?: string; day?: string }>();
+  const params = useLocalSearchParams<{
+    id?: string;
+    regionId?: string;
+    day?: string;
+    title?: string;
+    placeId?: string;
+    placeQuery?: string;
+    placeAddress?: string;
+    placeLatitude?: string;
+    placeLongitude?: string;
+  }>();
   const { selectedRegionId } = useTravelMode();
   const { addSchedule, getScheduleById, removeSchedule, updateSchedule } = useSchedule();
   const existing = params.id ? getScheduleById(params.id) : undefined;
@@ -35,13 +51,13 @@ export default function ScheduleEditScreen() {
   const [day, setDay] = useState(initialDay);
   const [date, setDate] = useState(getLocalDateString());
   const [time, setTime] = useState("10:00");
-  const [title, setTitle] = useState("");
-  const [placeQuery, setPlaceQuery] = useState("");
+  const [title, setTitle] = useState(params.title ?? "");
+  const [placeQuery, setPlaceQuery] = useState(params.placeQuery ?? "");
   const [detail, setDetail] = useState("");
-  const [placeId, setPlaceId] = useState("");
-  const [placeAddress, setPlaceAddress] = useState("");
-  const [placeLatitude, setPlaceLatitude] = useState<number | undefined>();
-  const [placeLongitude, setPlaceLongitude] = useState<number | undefined>();
+  const [placeId, setPlaceId] = useState(params.placeId ?? "");
+  const [placeAddress, setPlaceAddress] = useState(params.placeAddress ?? "");
+  const [placeLatitude, setPlaceLatitude] = useState<number | undefined>(() => getOptionalCoordinate(params.placeLatitude));
+  const [placeLongitude, setPlaceLongitude] = useState<number | undefined>(() => getOptionalCoordinate(params.placeLongitude));
   const [googleMapsUri, setGoogleMapsUri] = useState("");
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [searching, setSearching] = useState(false);
@@ -307,7 +323,9 @@ export default function ScheduleEditScreen() {
         <View style={[styles.selectedPlace, { backgroundColor: region.soft }]}> 
           <MaterialCommunityIcons color={region.accent} name="check-circle" size={18} />
           <View style={styles.selectedCopy}>
-            <Text style={styles.selectedTitle}>Google Places 장소 선택 완료</Text>
+            <Text style={styles.selectedTitle}>
+              {placeId.startsWith("mock:") ? "추천 장소 선택 완료" : "Google Places 장소 선택 완료"}
+            </Text>
             <Text numberOfLines={2} style={styles.selectedAddress}>{placeAddress}</Text>
             {placeLatitude !== undefined && placeLongitude !== undefined ? (
               <Text style={styles.coordinateText}>{placeLatitude.toFixed(6)}, {placeLongitude.toFixed(6)}</Text>

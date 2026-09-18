@@ -16,9 +16,11 @@ type RegionItem = {
 type Props = {
   region: RegionItem;
   markers: MarkerItem[];
+  selectedMarkerId?: string;
+  onSelectMarker?: (markerId: string) => void;
 };
 
-export function ExploreMap({ region, markers }: Props) {
+export function ExploreMap({ region, markers, selectedMarkerId, onSelectMarker }: Props) {
   return (
     <MapView
       style={{ flex: 1 }}
@@ -33,8 +35,9 @@ export function ExploreMap({ region, markers }: Props) {
         <Marker
           key={marker.id}
           coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
+          onPress={() => onSelectMarker?.(marker.id)}
           title={marker.title}
-          pinColor={colors.primary}
+          pinColor={marker.id === selectedMarkerId ? colors.teal : colors.primary}
         />
       ))}
     </MapView>
