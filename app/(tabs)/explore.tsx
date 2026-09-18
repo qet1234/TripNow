@@ -30,6 +30,20 @@ const categoryIcon: Record<Filter, string> = {
   쇼핑: "🛍️",
 };
 
+const prefectureLabelByCityId: Record<string, string> = {
+  tokyo: "도쿄도",
+  osaka: "오사카부",
+  kyoto: "교토부",
+  fukuoka: "후쿠오카현",
+  sapporo: "홋카이도",
+  nagoya: "아이치현",
+  okinawa: "오키나와현",
+};
+
+function getPrefectureLabel(cityId: string, fallback: string) {
+  return prefectureLabelByCityId[cityId] ?? fallback;
+}
+
 export default function ExploreScreen() {
   const router = useRouter();
   const { selectedRegionId, setSelectedRegionId, mode } = useTravelMode();
@@ -195,7 +209,7 @@ export default function ExploreScreen() {
 
       <View style={styles.regionPicker}>
         <View style={styles.sectionHeading}>
-          <Text style={styles.sectionTitle}>도시와 지역</Text>
+          <Text style={styles.sectionTitle}>도도부현과 세부 지역</Text>
           <Text style={styles.sectionMeta}>{mode === "local" ? "현지 모드" : "미리보기"}</Text>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cities}>
@@ -203,7 +217,7 @@ export default function ExploreScreen() {
             const selected = city.id === region.cityId;
             return (
               <Pressable key={city.id} onPress={() => selectCity(city.id)} style={[styles.city, selected && styles.citySelected]}>
-                <Text style={[styles.cityText, selected && styles.cityTextSelected]}>{city.label}</Text>
+                <Text style={[styles.cityText, selected && styles.cityTextSelected]}>{getPrefectureLabel(city.id, city.label)}</Text>
               </Pressable>
             );
           })}
