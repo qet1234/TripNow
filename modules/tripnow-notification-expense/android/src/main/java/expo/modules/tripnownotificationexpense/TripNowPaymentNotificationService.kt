@@ -112,29 +112,44 @@ private object PaymentNotificationParser {
     text: String,
     matchedAmount: String,
   ): String {
-    val candidates = listOf(text, title)
-      .map { raw ->
-        raw
-          .replace(matchedAmount, " ")
-          .replace(Regex("""\[[^]]{1,30}]"""), " ")
-          .replace(
-            Regex(
-              """결제|승인|사용|지불|payment|paid|purchase|利用|支払|決済|購入""",
-              RegexOption.IGNORE_CASE,
-            ),
-            " ",
-          )
-          .replace(Regex("""\b\d{4,}\b"""), " ")
-          .replace(Regex("""\s+"""), " ")
-          .trim(' ', '-', ':', '·', '|', '/')
-      }
-      .filter { it.length in 2..50 }
-      .filterNot { value ->
-        value.all { character ->
-          character.isDigit() || character in listOf(',', '.', '-', ':', '/')
-        }
-      }
+    val cleanup = { raw: String ->
+      raw
+        .replace(Regex("""\[[^]]{1,30}]"""), " ")
+        .replace(
+          Regex(
+            """결제|승인|사용|지불|payment|paid|purchase|利用|支払|決済|購入|일시불|체크카드|신용카드|잔액|누적|카드""",
+            RegexOption.IGNORE_CASE,
+          ),
+          " ",
+        )
+        .replace(Regex("""\b\d{4,}\b"""), " ")
+        .replace(Regex("""\s+"""), " ")
+        .trim(' ', '-', ':', '·', '|', '/', ',')
+        .take(40)
+    }
 
-    return candidates.firstOrNull() ?: "가맹점 확인 필요"
+    fun nearby(raw: String): List<String> {
+      val index = raw.indexOf(matchedAmount)
+      if (index < 0) return emptyList()
+
+      val before = raw.substring(0, index).takeLast(32)
+      val after = raw.substring(index + matchedAmount.length).take(32)
+
+      return listOf(after, before)
+        .map(cleanup)
+        .filter { it.length in 2..30 }
+        .filterNot { value ->
+          value.all { character ->
+            character.isDigit() || character in listOf(',', '.', '-', ':', '/')
+          }
+        }
+    }
+
+    val fromText = nearby(text)
+    if (fromText.isNotEmpty()) return fromText.first()
+
+    // 제목은 금액과 함께 표시된 경우에만 사용합니다. 전체 제목을 그대로 저장하지 않습니다.
+    val fromTitle = nearby(title)
+    return fromTitle.firstOrNull() ?: "가맹점 확인 필요"
   }
 }
