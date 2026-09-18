@@ -73,16 +73,40 @@ export default function ExploreScreen() {
 
   const places = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
-    const source = savedOnly ? savedPlaces : livePlaces.length > 0 ? livePlaces : mockPlaces;
+    const category = categoryByFilter[activeFilter];
+
+    const fallbackForRegion = mockPlaces.filter(
+      (place) => place.regionId === region.id && place.category === category,
+    );
+    const fallbackForCity = mockPlaces.filter(
+      (place) => place.cityId === region.cityId && place.category === category,
+    );
+    const fallbackPlaces =
+      fallbackForRegion.length > 0 ? fallbackForRegion : fallbackForCity;
+
+    const source = savedOnly
+      ? savedPlaces
+      : livePlaces.length > 0
+        ? livePlaces
+        : fallbackPlaces;
+
     return source.filter((place) => {
-      if (place.cityId !== region.cityId || place.category !== categoryByFilter[activeFilter]) return false;
+      if (place.cityId !== region.cityId || place.category !== category) return false;
       if (!normalizedQuery) return true;
       return [place.name, place.areaLabel, place.address, ...place.tags]
         .join(" ")
         .toLocaleLowerCase()
         .includes(normalizedQuery);
     });
-  }, [activeFilter, livePlaces, query, region.cityId, savedOnly, savedPlaces]);
+  }, [
+    activeFilter,
+    livePlaces,
+    query,
+    region.cityId,
+    region.id,
+    savedOnly,
+    savedPlaces,
+  ]);
 
   useEffect(() => {
     if (!places.some((place) => place.id === selectedPlaceId)) {
