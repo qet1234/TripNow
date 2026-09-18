@@ -1,4 +1,4 @@
-import { supabase } from "@/src/lib/supabase";
+import { supabase, supabaseConfigured } from "@/src/lib/supabase";
 
 export type AirportCongestionPhase = "departure" | "arrival";
 
@@ -47,6 +47,9 @@ export async function getIncheonAirportCongestion({
   airportCode,
   flightId,
 }: Query): Promise<AirportCongestion> {
+  if (!supabaseConfigured) {
+    throw new Error("공항 API 키 등록 후 실시간 혼잡도를 조회할 수 있습니다.");
+  }
   const normalizedTerminal: "1" | "2" = terminal === "2" ? "2" : "1";
   const normalizedAirportCode = airportCode?.trim().toUpperCase() || "";
   const normalizedFlightId = flightId?.trim().toUpperCase().replace(/\s+/g, "") || "";

@@ -1,4 +1,4 @@
-import { supabase } from "@/src/lib/supabase";
+import { supabase, supabaseConfigured } from "@/src/lib/supabase";
 
 export type AirportFlightDirection = "departure" | "arrival";
 
@@ -51,6 +51,9 @@ export async function getIncheonFlightStatus({
   const normalizedFlightId = flightId.toUpperCase().replace(/\s+/g, "");
   if (!/^[A-Z0-9]{2,3}\d{1,4}$/.test(normalizedFlightId)) {
     throw new Error("항공편 번호를 확인해 주세요.");
+  }
+  if (!supabaseConfigured) {
+    throw new Error("공항 API 키 등록 후 실시간 운항정보를 조회할 수 있습니다.");
   }
 
   const { data, error } = await supabase.functions.invoke(
