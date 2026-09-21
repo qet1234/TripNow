@@ -1,10 +1,12 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { ExploreMap } from "@/src/components/ExploreMap";
 import { Screen } from "@/src/components/Screen";
 import { useSavedPlaces } from "@/src/context/SavedPlacesContext";
+import { useSchedule } from "@/src/context/ScheduleContext";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { mockPlaces } from "@/src/data/mockJapan";
 import { fetchNearbyJapanPlaces } from "@/src/services/places";
@@ -15,6 +17,7 @@ import type { PlaceCategory, PlacePreview } from "@/src/types/travel";
 
 const filters = ["맛집", "카페", "관광", "쇼핑"] as const;
 type Filter = (typeof filters)[number];
+const EXPLORE_STATE_KEY = "tripnow:explore-state:v1";
 
 const categoryByFilter: Record<Filter, PlaceCategory> = {
   맛집: "food",
@@ -48,6 +51,7 @@ export default function ExploreScreen() {
   const router = useRouter();
   const { selectedRegionId, setSelectedRegionId, mode } = useTravelMode();
   const { savedPlaces, isSaved, toggleSaved } = useSavedPlaces();
+  const { schedules } = useSchedule();
   const [activeFilter, setActiveFilter] = useState<Filter>("맛집");
   const [query, setQuery] = useState("");
   const [selectedPlaceId, setSelectedPlaceId] = useState("");
@@ -55,8 +59,36 @@ export default function ExploreScreen() {
   const [livePlaces, setLivePlaces] = useState<PlacePreview[]>([]);
   const [livePlacesLoading, setLivePlacesLoading] = useState(false);
   const [livePlacesError, setLivePlacesError] = useState("");
+  const [exploreStateHydrated, setExploreStateHydrated] = useState(false);
   const region = getJapanRegion(selectedRegionId);
   const cityRegions = getJapanRegionsByCity(region.cityId);
+
+  useEffect(() => {
+    void AsyncStorage.getItem(EXPLORE_STATE_KEY)
+      .then((raw) => {
+        if (!raw) return;
+        const saved = JSON.parse(raw) as {
+          activeFilter?: Filter;
+          query?: string;
+          savedOnly?: boolean;
+        };
+        if (saved.activeFilter && filters.includes(saved.activeFilter)) {
+          setActiveFilter(saved.activeFilter);
+        }
+        if (typeof saved.query === "string") setQuery(saved.query);
+        if (typeof saved.savedOnly === "boolean") setSavedOnly(saved.savedOnly);
+      })
+      .catch(() => undefined)
+      .finally(() => setExploreStateHydrated(true));
+  }, []);
+
+  useEffect(() => {
+    if (!exploreStateHydrated) return;
+    void AsyncStorage.setItem(
+      EXPLORE_STATE_KEY,
+      JSON.stringify({ activeFilter, query, savedOnly }),
+    );
+  }, [activeFilter, exploreStateHydrated, query, savedOnly]);
 
   useEffect(() => {
     let active = true;
@@ -122,6 +154,15 @@ export default function ExploreScreen() {
     savedPlaces,
   ]);
 
+  const scheduleCountByPlaceId = useMemo(() => {
+    const counts = new Map<string, number>();
+    schedules.forEach((item) => {
+      if (!item.placeId) return;
+      counts.set(item.placeId, (counts.get(item.placeId) ?? 0) + 1);
+    });
+    return counts;
+  }, [schedules]);
+
   useEffect(() => {
     if (!places.some((place) => place.id === selectedPlaceId)) {
       setSelectedPlaceId(places[0]?.id ?? "");
@@ -157,6 +198,7 @@ export default function ExploreScreen() {
         placeAddress: place.address,
         placeLatitude: String(place.latitude),
         placeLongitude: String(place.longitude),
+        source: "explore",
       },
     });
   };
@@ -279,6 +321,7 @@ export default function ExploreScreen() {
           {places.map((place) => {
             const selected = place.id === selectedPlace?.id;
             const saved = isSaved(place.id);
+            const scheduleCount = scheduleCountByPlaceId.get(place.id) ?? 0;
             return (
               <View key={place.id} style={[styles.placeCard, selected && styles.placeCardSelected]}>
                 <Pressable accessibilityRole="button" onPress={() => setSelectedPlaceId(place.id)} style={styles.placeSelectButton}>
@@ -287,6 +330,12 @@ export default function ExploreScreen() {
                     <Text numberOfLines={1} style={styles.placeTitle}>{place.name}</Text>
                     <Text numberOfLines={1} style={styles.placeMeta}>{place.areaLabel}</Text>
                     <Text numberOfLines={1} style={styles.placeTags}>{place.tags.map((tag) => `#${tag}`).join(" ")}</Text>
+                    {scheduleCount > 0 ? (
+                      <View style={styles.scheduleBadge}>
+                        <MaterialCommunityIcons color="#157A55" name="calendar-check" size={12} />
+                        <Text style={styles.scheduleBadgeText}>일정 {scheduleCount}개</Text>
+                      </View>
+                    ) : null}
                   </View>
                 </Pressable>
                 <Pressable accessibilityLabel={saved ? `${place.name} 보관함에서 삭제` : `${place.name} 보관함에 저장`} hitSlop={8} onPress={() => toggleSaved(place)} style={styles.bookmarkButton}>
@@ -325,7 +374,9 @@ export default function ExploreScreen() {
             </Pressable>
             <Pressable onPress={() => addToSchedule(selectedPlace)} style={styles.primaryAction}>
               <MaterialCommunityIcons color="#FFFFFF" name="calendar-plus" size={18} />
-              <Text style={styles.primaryActionText}>일정에 추가</Text>
+              <Text style={styles.primaryActionText}>
+                {(scheduleCountByPlaceId.get(selectedPlace.id) ?? 0) > 0 ? "다른 일정에 추가" : "일정에 추가"}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -383,6 +434,8 @@ const styles = StyleSheet.create({
   placeTitle: { color: colors.text, fontSize: 14, fontWeight: "900" },
   placeMeta: { color: colors.textMuted, fontSize: 10, marginTop: 3 },
   placeTags: { color: colors.primary, fontSize: 9, fontWeight: "700", marginTop: 4 },
+  scheduleBadge: { alignSelf: "flex-start", minHeight: 20, borderRadius: radius.pill, backgroundColor: "#EAF7F1", flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 7, marginTop: 5 },
+  scheduleBadgeText: { color: "#157A55", fontSize: 9, fontWeight: "900" },
   bookmarkButton: { width: 38, height: 38, alignItems: "center", justifyContent: "center" },
   emptyCard: { minHeight: 130, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center", padding: 18 },
   emptyTitle: { color: colors.text, fontSize: 13, fontWeight: "900", marginTop: 8 },
