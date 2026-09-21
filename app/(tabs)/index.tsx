@@ -17,6 +17,7 @@ import { useSchedule } from "@/src/context/ScheduleContext";
 import { useTravelMode } from "@/src/context/TravelModeContext";
 import { getHomeRegion, homeRegions } from "@/src/data/homeRegions";
 import { useResponsiveLayout } from "@/src/hooks/useResponsiveLayout";
+import { getLocalIsoDate, selectHomeSchedules } from "@/src/services/schedule";
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
@@ -48,9 +49,17 @@ export default function HomeScreen() {
 
   const region = getHomeRegion(selectedRegionId);
   const regionSchedules = getSchedulesByRegion(selectedRegionId);
-  const homeDay = regionSchedules[0]?.day ?? 1;
-  const homeSchedules = regionSchedules.filter((item) => item.day === homeDay).slice(0, 2);
-  const nextSchedule = homeSchedules[0];
+  const scheduleSelection = selectHomeSchedules(regionSchedules);
+  const today = getLocalIsoDate();
+  const homeDay = scheduleSelection.day;
+  const homeSchedules = scheduleSelection.schedules.slice(0, 2);
+  const nextSchedule = scheduleSelection.nextSchedule;
+  const scheduleSectionTitle = scheduleSelection.kind === "today"
+    ? "오늘의 일정"
+    : scheduleSelection.kind === "upcoming"
+      ? "다가오는 일정"
+      : "등록한 일정";
+  const ticketLabel = scheduleSelection.kind === "today" ? "다음 일정" : "예정 일정";
   const heroHeight = isCompactWidth ? 120 : isLargeScreen ? 180 : isLandscape ? 150 : 137;
 
   if (!airportHydrated) {
@@ -203,14 +212,14 @@ export default function HomeScreen() {
         <View style={styles.ticketCopy}>
           <View style={styles.ticketLabelRow}>
             <MaterialCommunityIcons color={region.accent} name="calendar-blank-outline" size={17} />
-            <Text style={[styles.ticketLabel, { color: region.accent }]}>다음 일정</Text>
+            <Text style={[styles.ticketLabel, { color: region.accent }]}>{ticketLabel}</Text>
           </View>
           <Text numberOfLines={1} style={styles.ticketTitle}>
             {nextSchedule?.title ?? "일정을 추가해 주세요"}
           </Text>
           <Text numberOfLines={1} style={styles.ticketMeta}>
             {nextSchedule
-              ? `${nextSchedule.time} · ${nextSchedule.detail || nextSchedule.date}`
+              ? `${nextSchedule.date === today ? nextSchedule.time : `${nextSchedule.date} ${nextSchedule.time}`} · ${nextSchedule.detail || nextSchedule.title}`
               : "일정 탭에서 여행 계획을 등록해 보세요"}
           </Text>
         </View>
@@ -256,7 +265,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.sectionHeading}>
-        <Text style={styles.sectionTitle}>오늘의 일정</Text>
+        <Text style={styles.sectionTitle}>{scheduleSectionTitle}</Text>
         <Pressable onPress={() => router.push("/schedule")} style={styles.seeAllButton}>
           <Text style={[styles.seeAll, { color: region.accent }]}>전체 보기</Text>
           <MaterialCommunityIcons color={region.accent} name="chevron-right" size={18} />
