@@ -1,5 +1,5 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Screen } from "@/src/components/Screen";
@@ -19,6 +19,7 @@ function getMapQuery(item: ScheduleItem, city: string) {
 
 export default function ScheduleScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ added?: string; day?: string }>();
   const { selectedRegionId } = useTravelMode();
   const { getSchedulesByRegion, hydrated } = useSchedule();
   const [selectedDay, setSelectedDay] = useState(1);
@@ -26,11 +27,15 @@ export default function ScheduleScreen() {
   const japanRegion = getJapanRegion(selectedRegionId);
   const regionSchedules = getSchedulesByRegion(selectedRegionId);
   const daySchedules = regionSchedules.filter((item) => item.day === selectedDay);
+  const requestedDay = Number(params.day);
+  const addedDay = requestedDay >= 1 && requestedDay <= 4 ? requestedDay : selectedDay;
 
   useEffect(() => {
-    const firstDay = regionSchedules[0]?.day ?? 1;
+    const firstDay = requestedDay >= 1 && requestedDay <= 4
+      ? requestedDay
+      : regionSchedules[0]?.day ?? 1;
     setSelectedDay(firstDay);
-  }, [selectedRegionId, regionSchedules[0]?.id]);
+  }, [params.day, selectedRegionId, regionSchedules[0]?.id]);
 
   const addRoute = `/schedule-edit?regionId=${encodeURIComponent(selectedRegionId)}&day=${selectedDay}`;
 
@@ -61,6 +66,13 @@ export default function ScheduleScreen() {
           );
         })}
       </ScrollView>
+
+      {params.added === "1" ? (
+        <View style={styles.addedNotice}>
+          <MaterialCommunityIcons color="#157A55" name="check-circle" size={19} />
+          <Text style={styles.addedNoticeText}>선택한 장소를 {addedDay}일차 일정에 추가했습니다.</Text>
+        </View>
+      ) : null}
 
       {!hydrated ? (
         <View style={styles.emptyState}><Text style={styles.emptyTitle}>일정을 불러오는 중입니다</Text></View>
@@ -140,6 +152,8 @@ const styles = StyleSheet.create({
   dayTextActive: { color: "#FFFFFF", fontWeight: "900" },
   dayCount: { minWidth: 18, height: 18, borderRadius: 9, backgroundColor: "#EEF2F1", color: colors.textMuted, fontSize: 10, fontWeight: "900", textAlign: "center", lineHeight: 18 },
   dayCountActive: { backgroundColor: "rgba(255,255,255,0.22)", color: "#FFFFFF" },
+  addedNotice: { borderRadius: radius.sm, backgroundColor: "#EAF7F1", flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10 },
+  addedNoticeText: { flex: 1, color: "#17694D", fontSize: 11, lineHeight: 16, fontWeight: "800" },
   timeline: { paddingTop: 7 },
   timelineRow: { flexDirection: "row", minHeight: 132, gap: 10 },
   timeColumn: { width: 52, alignItems: "center" },
