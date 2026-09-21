@@ -13,15 +13,8 @@ import {
   type PlaceSuggestion,
 } from "@/src/services/places";
 import { openGoogleMapsSearch } from "@/src/services/navigation";
+import { getLocalIsoDate, isValidScheduleDate } from "@/src/services/schedule";
 import { colors, radius } from "@/src/theme";
-
-function getLocalDateString() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = `${now.getMonth() + 1}`.padStart(2, "0");
-  const day = `${now.getDate()}`.padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 function getOptionalCoordinate(value?: string) {
   if (!value) return undefined;
@@ -41,15 +34,16 @@ export default function ScheduleEditScreen() {
     placeAddress?: string;
     placeLatitude?: string;
     placeLongitude?: string;
+    source?: string;
   }>();
-  const { selectedRegionId } = useTravelMode();
+  const { selectedRegionId, setSelectedRegionId } = useTravelMode();
   const { addSchedule, getScheduleById, removeSchedule, updateSchedule } = useSchedule();
   const existing = params.id ? getScheduleById(params.id) : undefined;
 
   const initialDay = Math.max(1, Math.min(4, Number(params.day ?? "1") || 1));
   const [regionId, setRegionId] = useState(params.regionId ?? selectedRegionId);
   const [day, setDay] = useState(initialDay);
-  const [date, setDate] = useState(getLocalDateString());
+  const [date, setDate] = useState(getLocalIsoDate());
   const [time, setTime] = useState("10:00");
   const [title, setTitle] = useState(params.title ?? "");
   const [placeQuery, setPlaceQuery] = useState(params.placeQuery ?? "");
@@ -183,8 +177,8 @@ export default function ScheduleEditScreen() {
       setError("시간은 09:30처럼 HH:mm 형식으로 입력해 주세요.");
       return;
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedDate)) {
-      setError("날짜는 2026-09-16처럼 YYYY-MM-DD 형식으로 입력해 주세요.");
+    if (!isValidScheduleDate(normalizedDate)) {
+      setError("날짜는 2026-09-16처럼 실제 존재하는 날짜로 입력해 주세요.");
       return;
     }
 
@@ -207,6 +201,14 @@ export default function ScheduleEditScreen() {
       updateSchedule(existing.id, draft);
     } else {
       addSchedule(draft);
+    }
+    setSelectedRegionId(regionId);
+    if (!existing && params.source === "explore") {
+      router.replace({
+        pathname: "/schedule",
+        params: { added: "1", day: String(day) },
+      });
+      return;
     }
     router.back();
   };
