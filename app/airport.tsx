@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen } from "@/src/components/Screen";
+import { JapanAirportQuickGuide } from "@/src/components/JapanAirportQuickGuide";
 import {
   emptyAirportFlightPlan,
   type AirportFlightPlan,
@@ -157,9 +158,25 @@ export default function AirportScreen() {
             </View>
             <View style={styles.twoColumns}>
               <Field label="항공편" placeholder="KE703" value={draft.outboundFlight} onChangeText={(value) => update("outboundFlight", value)} />
-              <Field label="터미널" placeholder="1" value={draft.outboundTerminal} onChangeText={(value) => update("outboundTerminal", value)} keyboardType="numbers-and-punctuation" />
+              <Field label="일본 도착 공항코드" placeholder="NRT" value={draft.outboundAirportCode} onChangeText={(value) => update("outboundAirportCode", value)} />
             </View>
-            <Field label="도착 도시" placeholder="도쿄" value={draft.outboundDestination} onChangeText={(value) => update("outboundDestination", value)} />
+            <View style={styles.twoColumns}>
+              <Field label="도착 도시" placeholder="도쿄" value={draft.outboundDestination} onChangeText={(value) => update("outboundDestination", value)} />
+              <Field label="인천 출발 터미널" placeholder="1" value={draft.outboundTerminal} onChangeText={(value) => update("outboundTerminal", value)} />
+            </View>
+            <View style={styles.twoColumns}>
+              <Field label="일본 도착 터미널(선택)" placeholder="자동 안내" value={draft.outboundJapanTerminal} onChangeText={(value) => update("outboundJapanTerminal", value)} />
+              <Field label="인천 출발 게이트(선택)" placeholder="예: 25" value={draft.outboundGate} onChangeText={(value) => update("outboundGate", value)} />
+            </View>
+            {Platform.OS === "web" ? (
+              <JapanAirportQuickGuide
+                airportCode={draft.outboundAirportCode}
+                city={draft.outboundDestination}
+                direction="arrival"
+                flightId={draft.outboundFlight}
+                manualTerminal={draft.outboundJapanTerminal}
+              />
+            ) : null}
           </View>
 
           <View style={styles.section}>
@@ -173,9 +190,26 @@ export default function AirportScreen() {
             </View>
             <View style={styles.twoColumns}>
               <Field label="항공편" placeholder="KE704" value={draft.returnFlight} onChangeText={(value) => update("returnFlight", value)} />
-              <Field label="터미널" placeholder="1" value={draft.returnTerminal} onChangeText={(value) => update("returnTerminal", value)} keyboardType="numbers-and-punctuation" />
+              <Field label="일본 출발 공항코드" placeholder="NRT" value={draft.returnAirportCode} onChangeText={(value) => update("returnAirportCode", value)} />
             </View>
-            <Field label="출발 도시" placeholder="도쿄" value={draft.returnOrigin} onChangeText={(value) => update("returnOrigin", value)} />
+            <View style={styles.twoColumns}>
+              <Field label="출발 도시" placeholder="도쿄" value={draft.returnOrigin} onChangeText={(value) => update("returnOrigin", value)} />
+              <Field label="일본 출발 터미널(선택)" placeholder="자동 안내" value={draft.returnJapanTerminal} onChangeText={(value) => update("returnJapanTerminal", value)} />
+            </View>
+            <View style={styles.twoColumns}>
+              <Field label="일본 출발 탑승구(선택)" placeholder="예: 63" value={draft.returnGate} onChangeText={(value) => update("returnGate", value)} />
+              <Field label="인천 도착 터미널" placeholder="1" value={draft.returnTerminal} onChangeText={(value) => update("returnTerminal", value)} />
+            </View>
+            {Platform.OS === "web" ? (
+              <JapanAirportQuickGuide
+                airportCode={draft.returnAirportCode}
+                city={draft.returnOrigin}
+                direction="departure"
+                flightId={draft.returnFlight}
+                gate={draft.returnGate}
+                manualTerminal={draft.returnJapanTerminal}
+              />
+            ) : null}
           </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -189,7 +223,7 @@ export default function AirportScreen() {
           </Pressable>
 
           <Text style={styles.privacy}>
-            항공권 원본과 OCR 전문은 저장하지 않고, 확인한 일정만 이 기기에 보관합니다.
+            항공권 원본과 OCR 전문은 저장하지 않고, 확인한 일정만 이 기기에 보관합니다. 웹 공항 안내는 ODPT·FlightAware 없이 공식 공항 페이지와 기본 터미널 정보를 사용합니다.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>

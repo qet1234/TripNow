@@ -118,7 +118,7 @@ export default function ExpensesScreen() {
         </View>
       ) : !accessEnabled ? (
         <View style={styles.permissionCard}>
-          <MaterialCommunityIcons color={colors.primary} name="bell-lock-outline" size={28} />
+          <MaterialCommunityIcons color={colors.primary} name="bell-check-outline" size={28} />
           <Text style={styles.permissionTitle}>알림 접근 권한이 필요합니다</Text>
           <Text style={styles.permissionText}>
             Android 설정에서 TripNow의 알림 접근을 직접 허용해야 합니다.

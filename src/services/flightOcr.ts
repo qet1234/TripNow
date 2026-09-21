@@ -11,12 +11,18 @@ type FlightFields = Pick<
   | "outboundDate"
   | "outboundTime"
   | "outboundFlight"
+  | "outboundAirportCode"
   | "outboundTerminal"
+  | "outboundJapanTerminal"
+  | "outboundGate"
   | "outboundDestination"
   | "returnDate"
   | "returnTime"
   | "returnFlight"
+  | "returnAirportCode"
   | "returnTerminal"
+  | "returnJapanTerminal"
+  | "returnGate"
   | "returnOrigin"
 >;
 
@@ -308,6 +314,13 @@ function parseTerminal(text: string) {
   return match?.[1] ?? match?.[2] ?? "";
 }
 
+function parseGate(text: string) {
+  const match = text.match(
+    /(?:gate|탑승구|게이트|ゲート)\s*(?:no\.?|#|:)?\s*([A-Z]?\d{1,3})/i,
+  );
+  return match?.[1]?.toUpperCase() ?? "";
+}
+
 function compactDraft(value: FlightOcrDraft): FlightOcrDraft {
   return Object.fromEntries(
     Object.entries(value).filter(([, field]) => Boolean(field)),
@@ -335,6 +348,7 @@ function parseFlightText(text: string): FlightOcrDraft {
   const time = parseTime(normalizedText);
   const flight = parseFlightNumber(normalizedText);
   const terminal = parseTerminal(normalizedText);
+  const gate = parseGate(normalizedText);
   const isOutbound =
     origin === "ICN" ||
     (/출국|depart|出発/i.test(normalizedText) && destination !== "ICN");
@@ -351,7 +365,9 @@ function parseFlightText(text: string): FlightOcrDraft {
       outboundDate: date,
       outboundTime: time,
       outboundFlight: flight,
+      outboundAirportCode: destination,
       outboundTerminal: terminal,
+      outboundGate: gate,
       outboundDestination: airportCity(destination) || destination,
     });
   }
@@ -361,7 +377,9 @@ function parseFlightText(text: string): FlightOcrDraft {
       returnDate: date,
       returnTime: time,
       returnFlight: flight,
-      returnTerminal: terminal,
+      returnAirportCode: origin,
+      returnJapanTerminal: terminal,
+      returnGate: gate,
       returnOrigin: airportCity(origin) || origin,
     });
   }

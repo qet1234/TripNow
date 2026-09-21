@@ -2,6 +2,7 @@ node_modules/
 .expo/
 .vercel/
 dist/
+dist-web/
 web-build/
 .env
 .env.local

@@ -12,12 +12,18 @@ export type AirportFlightPlan = {
   outboundDate: string;
   outboundTime: string;
   outboundFlight: string;
+  outboundAirportCode: string;
   outboundTerminal: string;
+  outboundJapanTerminal: string;
+  outboundGate: string;
   outboundDestination: string;
   returnDate: string;
   returnTime: string;
   returnFlight: string;
+  returnAirportCode: string;
   returnTerminal: string;
+  returnJapanTerminal: string;
+  returnGate: string;
   returnOrigin: string;
 };
 
@@ -35,12 +41,18 @@ export const emptyAirportFlightPlan: AirportFlightPlan = {
   outboundDate: "",
   outboundTime: "",
   outboundFlight: "",
+  outboundAirportCode: "",
   outboundTerminal: "",
+  outboundJapanTerminal: "",
+  outboundGate: "",
   outboundDestination: "",
   returnDate: "",
   returnTime: "",
   returnFlight: "",
+  returnAirportCode: "",
   returnTerminal: "",
+  returnJapanTerminal: "",
+  returnGate: "",
   returnOrigin: "",
 };
 
