@@ -83,7 +83,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: "홈", tabBarIcon: makeTabIcon("home-variant", "home-variant-outline", "#69717D") }} />
       <Tabs.Screen name="explore" options={{ title: "탐색", tabBarIcon: makeTabIcon("compass", "compass-outline", "#2F6FED") }} />
       <Tabs.Screen name="schedule" options={{ title: "일정", tabBarIcon: makeTabIcon("calendar-check", "calendar-check-outline", "#8B3FD6") }} />
-      <Tabs.Screen name="move" options={{ title: "교통", tabBarIcon: makeTabIcon("train", "train", "#0A9C9C") }} />
+      <Tabs.Screen name="move" options={{ title: "공항 안내", tabBarIcon: makeTabIcon("airplane", "airplane", "#0A9C9C") }} />
       <Tabs.Screen name="profile" options={{ title: "마이", tabBarIcon: makeTabIcon("account-circle", "account-circle-outline", "#8A8178") }} />
       <Tabs.Screen name="safety" options={{ href: null }} />
       <Tabs.Screen name="travel" options={{ href: null }} />
