@@ -215,8 +215,8 @@ export function AirportHome({
         </Pressable>
         <View style={styles.secondaryRow}>
           <Pressable onPress={onOpenTransport} style={styles.secondaryButton}>
-            <MaterialCommunityIcons color={colors.teal} name="train" size={20} />
-            <Text style={styles.secondaryButtonText}>공항 교통</Text>
+            <MaterialCommunityIcons color={colors.teal} name="airplane" size={20} />
+            <Text style={styles.secondaryButtonText}>공항 안내</Text>
           </Pressable>
           <Pressable onPress={onContinue} style={styles.secondaryButton}>
             <MaterialCommunityIcons color={colors.primary} name="map-search-outline" size={20} />
@@ -269,4 +269,3 @@ const styles = StyleSheet.create({
   secondaryButtonText: { color: colors.text, fontSize: 12, fontWeight: "900" },
   note: { color: colors.textMuted, fontSize: 10, lineHeight: 15, textAlign: "center", marginTop: 15, paddingHorizontal: 12 },
 });
-
