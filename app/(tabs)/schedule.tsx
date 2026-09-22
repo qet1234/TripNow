@@ -121,9 +121,9 @@ export default function ScheduleScreen() {
                     <Text style={[styles.actionText, { color: region.accent }]}>지도</Text>
                   </Pressable>
                   <View style={styles.actionDivider} />
-                  <Pressable onPress={() => router.push(`/move?scheduleId=${encodeURIComponent(item.id)}`)} style={styles.actionButton}>
-                    <MaterialCommunityIcons color={region.accent} name="directions" size={16} />
-                    <Text style={[styles.actionText, { color: region.accent }]}>경로 보기</Text>
+                  <Pressable onPress={() => router.push("/(tabs)/move")} style={styles.actionButton}>
+                    <MaterialCommunityIcons color={region.accent} name="airplane" size={16} />
+                    <Text style={[styles.actionText, { color: region.accent }]}>공항 안내</Text>
                   </Pressable>
                 </View>
               </View>
