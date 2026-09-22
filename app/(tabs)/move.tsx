@@ -1,1 +1,5 @@
-export { default } from "../airport";
+import { AirportQuickGuideScreen } from "@/src/components/AirportQuickGuideScreen";
+
+export default function AirportGuideTab() {
+  return <AirportQuickGuideScreen />;
+}
