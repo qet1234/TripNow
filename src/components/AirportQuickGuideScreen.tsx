@@ -129,9 +129,8 @@ export function AirportQuickGuideScreen() {
   const mapSheets = officialAirportMaps[airportCode];
   const mapSheet = mapSheets.find((sheet) => sheet.id === selectedMapId)
     ?? defaultAirportMap(airportCode, terminal.value, direction);
-  const mapSource = mapSheet ? Image.resolveAssetSource(mapSheet.image) : null;
   const imageWidth = mapZoomed ? Math.max(Math.round(mapWidth * 2.2), 760) : mapWidth;
-  const imageHeight = mapSource ? Math.round(imageWidth * mapSource.height / mapSource.width) : 0;
+  const imageHeight = mapSheet ? Math.round(imageWidth * (mapZoomed ? 1.05 : 0.72)) : 0;
   const kixDigitalMapUrl = airportCode === "KIX"
     ? `https://platinumaps.jp/maps/kix-airport?area=${/\\bT2\\b/i.test(terminal.value) ? "33" : "32"}&floor=${direction === "departure" && !/\\bT2\\b/i.test(terminal.value) ? "4F" : "1F"}`
     : "";
@@ -353,7 +352,7 @@ export function AirportQuickGuideScreen() {
           </ScrollView>
         ) : null}
 
-        {mapSheet && mapSource ? (
+        {mapSheet ? (
           <>
             <View
               onLayout={(event) => setMapWidth(Math.round(event.nativeEvent.layout.width))}
