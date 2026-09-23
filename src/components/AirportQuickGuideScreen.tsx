@@ -14,6 +14,7 @@ import {
 import { useRouter } from "expo-router";
 import { Screen } from "@/src/components/Screen";
 import { MotionPressable } from "@/src/components/MotionPressable";
+import { NaritaInternalMap } from "@/src/components/NaritaInternalMap";
 import { useAirportJourney, type AirportFlightPlan } from "@/src/context/AirportContext";
 import {
   japanAirportGuides,
@@ -382,26 +383,30 @@ export function AirportQuickGuideScreen() {
 
         {Platform.OS === "web" ? (
           <>
-            <View style={styles.kixMapFrame}>
-              {createElement("iframe", {
-                key: `${airportCode}-${terminal.value}-${direction}`,
-                src: digitalMap.embedUrl,
-                title: `${guide.name} 공식 디지털 지도`,
-                loading: "eager",
-                allow: "geolocation; fullscreen",
-                allowFullScreen: true,
-                referrerPolicy: "strict-origin-when-cross-origin",
-                style: {
-                  width: "100%",
-                  height: 460,
-                  border: 0,
-                  borderRadius: 14,
-                  backgroundColor: "#FFFFFF",
-                },
-              })}
-            </View>
+            {airportCode === "NRT" ? (
+              <NaritaInternalMap terminal={terminal.value} direction={direction} />
+            ) : (
+              <View style={styles.kixMapFrame}>
+                {createElement("iframe", {
+                  key: `${airportCode}-${terminal.value}-${direction}`,
+                  src: digitalMap.embedUrl,
+                  title: `${guide.name} 공식 디지털 지도`,
+                  loading: "eager",
+                  allow: "geolocation; fullscreen",
+                  allowFullScreen: true,
+                  referrerPolicy: "strict-origin-when-cross-origin",
+                  style: {
+                    width: "100%",
+                    height: 460,
+                    border: 0,
+                    borderRadius: 14,
+                    backgroundColor: "#FFFFFF",
+                  },
+                })}
+              </View>
+            )}
             <View style={styles.mapTools}>
-              <Text style={styles.mapSource}>{digitalMap.note}</Text>
+              <Text style={styles.mapSource}>{airportCode === "NRT" ? "나리타공항은 외부 iframe을 차단하므로 공식 시설 배치 정보를 바탕으로 한 TripNow 내장 안내도를 표시합니다." : digitalMap.note}</Text>
               <MotionPressable
                 accessibilityRole="link"
                 onPress={() => setMapFullscreen(true)}
@@ -499,20 +504,29 @@ export function AirportQuickGuideScreen() {
               </MotionPressable>
             </View>
             <View style={styles.fullscreenBody}>
-              {createElement("iframe", {
-                key: `fullscreen-${airportCode}-${terminal.value}-${direction}`,
-                src: digitalMap.embedUrl,
-                title: `${guide.name} 전체 화면 공식 디지털 지도`,
-                allow: "geolocation; fullscreen",
-                allowFullScreen: true,
-                referrerPolicy: "strict-origin-when-cross-origin",
-                style: {
-                  width: "100%",
-                  height: "100%",
-                  border: 0,
-                  backgroundColor: "#FFFFFF",
-                },
-              })}
+              {airportCode === "NRT" ? (
+                <ScrollView
+                  contentContainerStyle={{ flexGrow: 1 }}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <NaritaInternalMap terminal={terminal.value} direction={direction} compact />
+                </ScrollView>
+              ) : (
+                createElement("iframe", {
+                  key: `fullscreen-${airportCode}-${terminal.value}-${direction}`,
+                  src: digitalMap.embedUrl,
+                  title: `${guide.name} 전체 화면 공식 디지털 지도`,
+                  allow: "geolocation; fullscreen",
+                  allowFullScreen: true,
+                  referrerPolicy: "strict-origin-when-cross-origin",
+                  style: {
+                    width: "100%",
+                    height: "100%",
+                    border: 0,
+                    backgroundColor: "#FFFFFF",
+                  },
+                })
+              )}
             </View>
           </View>
         </Modal>
