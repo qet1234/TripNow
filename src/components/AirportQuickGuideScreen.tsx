@@ -1,7 +1,6 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { createElement, useEffect, useMemo, useState } from "react";
 import {
-  Image,
   Linking,
   Platform,
   ScrollView,
@@ -22,7 +21,7 @@ import {
   type JapanAirportCode,
 } from "@/src/data/japanAirportGuides";
 import { colors, radius } from "@/src/theme";
-import { defaultAirportMap, officialAirportMaps } from "@/src/data/officialAirportMaps";
+import { getDigitalAirportMap } from "@/src/data/digitalAirportMaps";
 
 type GuideDirection = "departure" | "arrival";
 
@@ -103,9 +102,6 @@ export function AirportQuickGuideScreen() {
   const [flightId, setFlightId] = useState("");
   const [travelDate, setTravelDate] = useState("");
   const [matched, setMatched] = useState(false);
-  const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
-  const [mapZoomed, setMapZoomed] = useState(false);
-  const [mapWidth, setMapWidth] = useState(320);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -116,7 +112,6 @@ export function AirportQuickGuideScreen() {
     setFlightId(fields.flightId);
     setTravelDate(fields.date);
     setMatched(Boolean(fields.flightId || fields.airportCode));
-    setSelectedMapId(null);
   }, [hydrated, phase, plan]);
 
   const guide = japanAirportGuides[airportCode];
@@ -126,14 +121,7 @@ export function AirportQuickGuideScreen() {
   const gate = savedFields.gate.trim() ? `Gate ${savedFields.gate.trim()}` : "전광판 확인";
   const flow = direction === "departure" ? guide.departureFlow : guide.arrivalFlow;
   const startTime = subtractMinutes(savedFields.time, 90);
-  const mapSheets = officialAirportMaps[airportCode];
-  const mapSheet = mapSheets.find((sheet) => sheet.id === selectedMapId)
-    ?? defaultAirportMap(airportCode, terminal.value, direction);
-  const imageWidth = mapZoomed ? Math.max(Math.round(mapWidth * 2.2), 760) : mapWidth;
-  const imageHeight = mapSheet ? Math.round(imageWidth * (mapZoomed ? 1.05 : 0.72)) : 0;
-  const kixDigitalMapUrl = airportCode === "KIX"
-    ? `https://platinumaps.jp/maps/kix-airport?area=${/\\bT2\\b/i.test(terminal.value) ? "33" : "32"}&floor=${direction === "departure" && !/\\bT2\\b/i.test(terminal.value) ? "4F" : "1F"}`
-    : "";
+  const digitalMap = getDigitalAirportMap(airportCode, terminal.value, direction);
 
   const route = useMemo(
     () =>
@@ -151,7 +139,6 @@ export function AirportQuickGuideScreen() {
     setTravelDate(fields.date);
     setMatched(Boolean(fields.flightId || fields.airportCode));
     setSelectedMapId(null);
-    setMapZoomed(false);
   };
 
   return (
@@ -189,8 +176,6 @@ export function AirportQuickGuideScreen() {
               onPress={() => {
                 setAirportCode(code);
                 setMatched(false);
-                setSelectedMapId(null);
-                setMapZoomed(false);
               }}
               style={[styles.airportChip, selected && styles.airportChipSelected]}
             >
@@ -260,7 +245,6 @@ export function AirportQuickGuideScreen() {
               onChangeText={(value) => {
                 setFlightId(value.toUpperCase());
                 setMatched(false);
-                setSelectedMapId(null);
               }}
               placeholder="예: KE703"
               placeholderTextColor="#A2A7AE"
@@ -329,89 +313,74 @@ export function AirportQuickGuideScreen() {
 
       <View style={styles.mapCard}>
         <View style={styles.mapHeading}>
-          <View>
-            <Text style={styles.cardEyebrow}>공항 운영사 공식 층별 지도</Text>
-            <Text style={styles.cardTitle}>{guide.code} · {mapSheet?.label ?? "공식 디지털 지도"}</Text>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.cardEyebrow}>PDF·이미지 대신 공식 웹 지도</Text>
+            <Text style={styles.cardTitle}>{guide.code} · {digitalMap.provider}</Text>
           </View>
-          <MaterialCommunityIcons color={colors.blue} name="map-marker-path" size={25} />
+          <View style={styles.officialBadge}>
+            <MaterialCommunityIcons color={colors.teal} name="map-marker-radius-outline" size={15} />
+            <Text style={styles.officialBadgeText}>{digitalMap.interactive ? "인터랙티브" : "웹 지도"}</Text>
+          </View>
         </View>
 
-        {mapSheets.length > 1 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mapTabs}>
-            {mapSheets.map((sheet) => (
-              <MotionPressable
-                accessibilityLabel={`${sheet.label} 지도 보기`}
-                accessibilityState={{ selected: sheet.id === mapSheet?.id }}
-                key={sheet.id}
-                onPress={() => { setSelectedMapId(sheet.id); setMapZoomed(false); }}
-                style={[styles.mapTab, sheet.id === mapSheet?.id && styles.mapTabSelected]}
-              >
-                <Text style={[styles.mapTabText, sheet.id === mapSheet?.id && styles.mapTabTextSelected]}>{sheet.label}</Text>
-              </MotionPressable>
-            ))}
-          </ScrollView>
-        ) : null}
-
-        {mapSheet ? (
-          <>
-            <View
-              onLayout={(event) => setMapWidth(Math.round(event.nativeEvent.layout.width))}
-              style={[styles.mapViewport, { height: Math.min(430, Math.max(210, imageHeight)) }]}
-            >
-              <ScrollView horizontal key={`${mapSheet.id}-${mapZoomed}`} nestedScrollEnabled showsHorizontalScrollIndicator={mapZoomed}>
-                <ScrollView nestedScrollEnabled showsVerticalScrollIndicator style={{ width: imageWidth }}>
-                  <Image
-                    accessibilityLabel={`${guide.name} ${mapSheet.label} 공식 지도`}
-                    resizeMode="contain"
-                    source={mapSheet.image}
-                    style={{ width: imageWidth, height: imageHeight }}
-                  />
-                </ScrollView>
-              </ScrollView>
-            </View>
-            <View style={styles.mapTools}>
-              <Text style={styles.mapSource}>{mapSheet.sourceNote}</Text>
-              <MotionPressable accessibilityLabel={mapZoomed ? "지도 축소" : "지도 확대"} onPress={() => setMapZoomed((value) => !value)} style={styles.zoomButton}>
-                <MaterialCommunityIcons color={colors.blue} name={mapZoomed ? "magnify-minus-outline" : "magnify-plus-outline"} size={17} />
-                <Text style={styles.zoomText}>{mapZoomed ? "축소" : "확대"}</Text>
-              </MotionPressable>
-            </View>
-            <Text style={styles.mapDisclaimer}>지도에서 좌우·위아래로 이동할 수 있습니다. 시설과 동선은 변경될 수 있으니 아래 최신 지도를 확인하세요.</Text>
-          </>
-        ) : airportCode === "KIX" && Platform.OS === "web" ? (
+        {Platform.OS === "web" ? (
           <>
             <View style={styles.kixMapFrame}>
               {createElement("iframe", {
-                src: kixDigitalMapUrl,
+                key: `${airportCode}-${terminal.value}-${direction}`,
+                src: digitalMap.embedUrl,
                 title: `${guide.name} 공식 디지털 지도`,
-                loading: "lazy",
+                loading: "eager",
+                allow: "geolocation; fullscreen",
                 allowFullScreen: true,
                 referrerPolicy: "strict-origin-when-cross-origin",
                 style: {
                   width: "100%",
-                  height: 420,
+                  height: 460,
                   border: 0,
                   borderRadius: 14,
                   backgroundColor: "#FFFFFF",
                 },
               })}
             </View>
-            <Text style={styles.mapDisclaimer}>
-              간사이공항 운영사가 연결한 공식 디지털 지도입니다. 화면 안에서 확대·이동해 터미널 동선을 확인할 수 있습니다.
-            </Text>
+            <View style={styles.mapTools}>
+              <Text style={styles.mapSource}>{digitalMap.note}</Text>
+              <MotionPressable
+                accessibilityRole="link"
+                onPress={() => openOfficialPage(digitalMap.openUrl)}
+                style={styles.zoomButton}
+              >
+                <MaterialCommunityIcons color={colors.blue} name="arrow-expand-all" size={16} />
+                <Text style={styles.zoomText}>전체 화면</Text>
+              </MotionPressable>
+            </View>
           </>
         ) : (
           <View style={styles.mapUnavailable}>
-            <MaterialCommunityIcons color={colors.blue} name="map-search-outline" size={30} />
-            <Text style={styles.mapUnavailableTitle}>간사이공항 최신 디지털 지도</Text>
-            <Text style={styles.mapUnavailableText}>운영사가 인쇄용 지도를 중단했습니다. 최신 디지털 지도는 아래 공식 지도 버튼에서 확인할 수 있습니다.</Text>
+            <MaterialCommunityIcons color={colors.blue} name="web" size={30} />
+            <Text style={styles.mapUnavailableTitle}>공식 디지털 지도</Text>
+            <Text style={styles.mapUnavailableText}>
+              PDF나 저장된 지도 이미지 대신 공항 운영사의 최신 웹 지도를 사용합니다.
+            </Text>
+            <MotionPressable
+              accessibilityRole="link"
+              onPress={() => openOfficialPage(digitalMap.openUrl)}
+              style={[styles.officialPrimary, { marginTop: 12, minWidth: 180, flex: 0 }]}
+            >
+              <MaterialCommunityIcons color="#FFFFFF" name="map-search-outline" size={18} />
+              <Text style={styles.officialPrimaryText}>공식 지도 보기</Text>
+            </MotionPressable>
           </View>
         )}
 
+        <Text style={styles.mapDisclaimer}>
+          지도 데이터는 TripNow가 복사한 PDF·이미지가 아니라 공항 운영사가 제공하는 웹 지도를 불러옵니다. 일부 공항은 제공 방식에 따라 시설 검색·층 전환 기능 범위가 다릅니다.
+        </Text>
+
         <View style={styles.officialButtons}>
-          <MotionPressable accessibilityRole="link" onPress={() => openOfficialPage(mapSheet?.sourceUrl ?? guide.mapUrl)} style={styles.officialPrimary}>
+          <MotionPressable accessibilityRole="link" onPress={() => openOfficialPage(digitalMap.openUrl)} style={styles.officialPrimary}>
             <MaterialCommunityIcons color="#FFFFFF" name="map-outline" size={18} />
-            <Text style={styles.officialPrimaryText}>최신 공식 지도 열기</Text>
+            <Text style={styles.officialPrimaryText}>공식 지도 전체 화면</Text>
             <MaterialCommunityIcons color="#FFFFFF" name="open-in-new" size={15} />
           </MotionPressable>
           <MotionPressable accessibilityRole="link" onPress={() => openOfficialPage(guide.flightUrl)} style={styles.officialSecondary}>
