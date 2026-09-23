@@ -27,10 +27,10 @@ export function getDigitalAirportMap(
       };
     case "NRT":
       return {
-        embedUrl: "https://www.narita-airport.jp/en/map/",
+        embedUrl: "",
         openUrl: "https://www.narita-airport.jp/en/map/",
-        provider: "Narita Interactive Map",
-        note: "나리타공항 공식 인터랙티브 지도 · 층별 시설과 경로 검색 지원",
+        provider: "TripNow Narita Internal Map",
+        note: "나리타공항 공식 시설 배치 정보를 바탕으로 한 TripNow 내장 안내도",
         interactive: true,
       };
     case "KIX": {
