@@ -228,7 +228,7 @@ export function AirportQuickGuideScreen() {
             <Text style={styles.cardEyebrow}>항공편 기준 자동 맞춤</Text>
             <Text style={styles.cardTitle}>편명으로 터미널 예상</Text>
           </View>
-          <Pressable onPress={() => router.push("/airport")} style={styles.photoButton}>
+          <Pressable onPress={() => router.push("/airport-setup")} style={styles.photoButton}>
             <MaterialCommunityIcons color={colors.blue} name="camera-outline" size={17} />
             <Text style={styles.photoButtonText}>항공권 사진</Text>
           </Pressable>

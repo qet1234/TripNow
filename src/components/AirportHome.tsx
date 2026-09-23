@@ -208,15 +208,15 @@ export function AirportHome({
       />
 
       <View style={styles.actionList}>
-        <Pressable onPress={onOpenSetup} style={[styles.primaryButton, { backgroundColor: accent }]}>
+        <Pressable onPress={onOpenTransport} style={[styles.primaryButton, { backgroundColor: accent }]}>
           <MaterialCommunityIcons color="#FFFFFF" name="information-outline" size={20} />
           <Text style={styles.primaryButtonText}>공항 안내 상세 보기</Text>
           <MaterialCommunityIcons color="#FFFFFF" name="chevron-right" size={21} />
         </Pressable>
         <View style={styles.secondaryRow}>
-          <Pressable onPress={onOpenTransport} style={styles.secondaryButton}>
-            <MaterialCommunityIcons color={colors.teal} name="airplane" size={20} />
-            <Text style={styles.secondaryButtonText}>공항 안내</Text>
+          <Pressable onPress={onOpenSetup} style={styles.secondaryButton}>
+            <MaterialCommunityIcons color={colors.teal} name="ticket-confirmation-outline" size={20} />
+            <Text style={styles.secondaryButtonText}>항공권 정보 설정</Text>
           </Pressable>
           <Pressable onPress={onContinue} style={styles.secondaryButton}>
             <MaterialCommunityIcons color={colors.primary} name="map-search-outline" size={20} />

@@ -24,6 +24,7 @@ export default function RootLayout() {
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="airport" options={{ presentation: "card" }} />
+              <Stack.Screen name="airport-setup" options={{ presentation: "card" }} />
               <Stack.Screen name="hotel" options={{ presentation: "card" }} />
               <Stack.Screen name="schedule-edit" options={{ presentation: "modal" }} />
               <Stack.Screen name="expenses" options={{ presentation: "card" }} />
