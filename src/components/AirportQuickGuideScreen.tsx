@@ -1,5 +1,5 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { useEffect, useMemo, useState } from "react";
+import { createElement, useEffect, useMemo, useState } from "react";
 import {
   Image,
   Linking,
@@ -376,11 +376,33 @@ export function AirportQuickGuideScreen() {
             </View>
             <Text style={styles.mapDisclaimer}>지도에서 좌우·위아래로 이동할 수 있습니다. 시설과 동선은 변경될 수 있으니 아래 최신 지도를 확인하세요.</Text>
           </>
+        ) : airportCode === "KIX" && Platform.OS === "web" ? (
+          <>
+            <View style={styles.kixMapFrame}>
+              {createElement("iframe", {
+                src: kixDigitalMapUrl,
+                title: `${guide.name} 공식 디지털 지도`,
+                loading: "lazy",
+                allowFullScreen: true,
+                referrerPolicy: "strict-origin-when-cross-origin",
+                style: {
+                  width: "100%",
+                  height: 420,
+                  border: 0,
+                  borderRadius: 14,
+                  backgroundColor: "#FFFFFF",
+                },
+              })}
+            </View>
+            <Text style={styles.mapDisclaimer}>
+              간사이공항 운영사가 연결한 공식 디지털 지도입니다. 화면 안에서 확대·이동해 터미널 동선을 확인할 수 있습니다.
+            </Text>
+          </>
         ) : (
           <View style={styles.mapUnavailable}>
             <MaterialCommunityIcons color={colors.blue} name="map-search-outline" size={30} />
             <Text style={styles.mapUnavailableTitle}>간사이공항 최신 디지털 지도</Text>
-            <Text style={styles.mapUnavailableText}>운영사가 인쇄용 지도를 중단했습니다. 터미널별 최신 층별 지도는 공식 페이지에서 확인할 수 있습니다.</Text>
+            <Text style={styles.mapUnavailableText}>운영사가 인쇄용 지도를 중단했습니다. 최신 디지털 지도는 아래 공식 지도 버튼에서 확인할 수 있습니다.</Text>
           </View>
         )}
 
@@ -504,7 +526,7 @@ const styles = StyleSheet.create({
   zoomButton: { minHeight: 34, flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 10, paddingHorizontal: 10, borderWidth: 1, borderColor: "#C7DCF5", backgroundColor: "#F7FBFF" },
   zoomText: { color: colors.blue, fontSize: 10, fontWeight: "900" },
   mapDisclaimer: { color: colors.textMuted, fontSize: 9, lineHeight: 15, marginTop: 2 },
-  mapUnavailable: { minHeight: 186, borderRadius: 15, borderWidth: 1, borderColor: "#C7DCF5", backgroundColor: "#F3F8FF", alignItems: "center", justifyContent: "center", padding: 20 },
+  kixMapFrame: { height: 420, overflow: "hidden", borderRadius: 15, borderWidth: 1, borderColor: "#C7DCF5", backgroundColor: "#FFFFFF" },\n  mapUnavailable: { minHeight: 186, borderRadius: 15, borderWidth: 1, borderColor: "#C7DCF5", backgroundColor: "#F3F8FF", alignItems: "center", justifyContent: "center", padding: 20 },
   mapUnavailableTitle: { color: colors.text, fontSize: 14, fontWeight: "900", marginTop: 10 },
   mapUnavailableText: { color: colors.textMuted, fontSize: 11, lineHeight: 18, textAlign: "center", marginTop: 8 },
   officialButtons: { flexDirection: "row", gap: 8, marginTop: 12 },
