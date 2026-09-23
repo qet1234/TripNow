@@ -15,7 +15,6 @@ import { useRouter } from "expo-router";
 import { Screen } from "@/src/components/Screen";
 import { MotionPressable } from "@/src/components/MotionPressable";
 import { NaritaMapxusMap } from "@/src/components/NaritaMapxusMap";
-import { OfficialAirportMapViewer } from "@/src/components/OfficialAirportMapViewer";
 import { useAirportJourney, type AirportFlightPlan } from "@/src/context/AirportContext";
 import {
   japanAirportGuides,
@@ -411,8 +410,6 @@ export function AirportQuickGuideScreen() {
           <>
             {airportCode === "NRT" ? (
               <NaritaMapxusMap terminal={terminal.value} direction={direction} />
-            ) : airportCode === "CTS" ? (
-              <OfficialAirportMapViewer airportCode="CTS" terminal={terminal.value} direction={direction} />
             ) : (
               <View style={styles.kixMapFrame}>
                 {createElement("iframe", {
@@ -436,9 +433,9 @@ export function AirportQuickGuideScreen() {
             <View style={styles.mapTools}>
               <Text style={styles.mapSource}>
                 {airportCode === "NRT"
-                  ? "Mapxus 인증 시 실내지도를 표시하고, 인증이 없으면 공식 발행 터미널 안내도를 내장 표시합니다."
+                  ? "Mapxus 지도 인증 시 실제 실내지도를 표시합니다. 인증되지 않았다면 PDF가 아닌 TripNow 간이 층별 동선 안내를 표시합니다."
                   : airportCode === "CTS"
-                    ? "신치토세공항 공식 국제선 안내도를 TripNow 안에서 확대해 볼 수 있습니다."
+                    ? "신치토세공항 공식 국제선 웹 층별 지도를 TripNow 안에서 표시합니다."
                     : digitalMap.note}
               </Text>
               <MotionPressable
@@ -469,7 +466,7 @@ export function AirportQuickGuideScreen() {
         )}
 
         <Text style={styles.mapDisclaimer}>
-          NRT·CTS는 공식 공항 안내도를 TripNow 내장 뷰어로 표시합니다. 실시간 지도는 아니며, 시설·게이트 변경은 공항 전광판에서 확인하세요. 다른 공항은 공식 웹 지도를 내장합니다.
+          CTS와 다른 공항은 공식 웹 지도를 내부에 표시합니다. NRT는 Mapxus 인증 시 실내 지도를, 인증이 없으면 비축척 간이 동선 안내를 제공합니다. 시설·게이트 변경은 공항 전광판에서 확인하세요.
         </Text>
 
         <View style={styles.officialButtons}>
@@ -542,8 +539,6 @@ export function AirportQuickGuideScreen() {
             <View style={styles.fullscreenBody}>
               {airportCode === "NRT" ? (
                 <NaritaMapxusMap fullscreen terminal={terminal.value} direction={direction} />
-              ) : airportCode === "CTS" ? (
-                <OfficialAirportMapViewer airportCode="CTS" terminal={terminal.value} direction={direction} fullscreen />
               ) : (
                 createElement("iframe", {
                   key: `fullscreen-${airportCode}-${terminal.value}-${direction}`,
