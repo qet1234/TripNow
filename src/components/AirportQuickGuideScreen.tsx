@@ -2,6 +2,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { createElement, useEffect, useMemo, useState } from "react";
 import {
   Linking,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -102,6 +103,7 @@ export function AirportQuickGuideScreen() {
   const [flightId, setFlightId] = useState("");
   const [travelDate, setTravelDate] = useState("");
   const [matched, setMatched] = useState(false);
+  const [mapFullscreen, setMapFullscreen] = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -346,7 +348,7 @@ export function AirportQuickGuideScreen() {
               <Text style={styles.mapSource}>{digitalMap.note}</Text>
               <MotionPressable
                 accessibilityRole="link"
-                onPress={() => openOfficialPage(digitalMap.openUrl)}
+                onPress={() => setMapFullscreen(true)}
                 style={styles.zoomButton}
               >
                 <MaterialCommunityIcons color={colors.blue} name="arrow-expand-all" size={16} />
@@ -377,10 +379,10 @@ export function AirportQuickGuideScreen() {
         </Text>
 
         <View style={styles.officialButtons}>
-          <MotionPressable accessibilityRole="link" onPress={() => openOfficialPage(digitalMap.openUrl)} style={styles.officialPrimary}>
+          <MotionPressable onPress={() => setMapFullscreen(true)} style={styles.officialPrimary}>
             <MaterialCommunityIcons color="#FFFFFF" name="map-outline" size={18} />
-            <Text style={styles.officialPrimaryText}>공식 지도 전체 화면</Text>
-            <MaterialCommunityIcons color="#FFFFFF" name="open-in-new" size={15} />
+            <Text style={styles.officialPrimaryText}>내장 전체 화면</Text>
+            <MaterialCommunityIcons color="#FFFFFF" name="fullscreen" size={15} />
           </MotionPressable>
           <MotionPressable accessibilityRole="link" onPress={() => openOfficialPage(guide.flightUrl)} style={styles.officialSecondary}>
             <MaterialCommunityIcons color={colors.blue} name="airplane-clock" size={18} />
@@ -417,6 +419,48 @@ export function AirportQuickGuideScreen() {
           <Text style={styles.tipTime}>늦어도 {startTime}부터 안내를 시작하세요.</Text>
         </View>
       </View>
+
+      {Platform.OS === "web" ? (
+        <Modal
+          animationType="fade"
+          onRequestClose={() => setMapFullscreen(false)}
+          presentationStyle="fullScreen"
+          visible={mapFullscreen}
+        >
+          <View style={styles.fullscreenMap}>
+            <View style={styles.fullscreenHeader}>
+              <View style={styles.fullscreenTitleWrap}>
+                <Text style={styles.fullscreenEyebrow}>TRIPNOW AIRPORT MAP</Text>
+                <Text style={styles.fullscreenTitle}>{guide.code} · {digitalMap.provider}</Text>
+                <Text style={styles.fullscreenSubtitle}>{terminal.value} · {direction === "departure" ? "출국" : "도착"}</Text>
+              </View>
+              <MotionPressable
+                accessibilityLabel="전체 화면 지도 닫기"
+                onPress={() => setMapFullscreen(false)}
+                style={styles.fullscreenClose}
+              >
+                <MaterialCommunityIcons color="#FFFFFF" name="close" size={24} />
+              </MotionPressable>
+            </View>
+            <View style={styles.fullscreenBody}>
+              {createElement("iframe", {
+                key: `fullscreen-${airportCode}-${terminal.value}-${direction}`,
+                src: digitalMap.embedUrl,
+                title: `${guide.name} 전체 화면 공식 디지털 지도`,
+                allow: "geolocation; fullscreen",
+                allowFullScreen: true,
+                referrerPolicy: "strict-origin-when-cross-origin",
+                style: {
+                  width: "100%",
+                  height: "100%",
+                  border: 0,
+                  backgroundColor: "#FFFFFF",
+                },
+              })}
+            </View>
+          </View>
+        </Modal>
+      ) : null}
 
       <Text style={styles.footerNotice}>
         화면 속 지도는 공항 운영사가 게시한 자료입니다. 터미널·탑승구와 시설 위치는 당일 변경될 수 있으므로 공식 최신 지도와 전광판에서 최종 확인해 주세요.
@@ -521,5 +565,13 @@ const styles = StyleSheet.create({
   tipEyebrow: { color: "#9A691A", fontSize: 10, fontWeight: "900" },
   tipText: { color: "#5C4A2C", fontSize: 11, lineHeight: 17, fontWeight: "700", marginTop: 4 },
   tipTime: { color: colors.primary, fontSize: 10, fontWeight: "900", marginTop: 7 },
+  fullscreenMap: { flex: 1, backgroundColor: "#071827" },
+  fullscreenHeader: { minHeight: 76, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 18, paddingVertical: 12, backgroundColor: "#102A43" },
+  fullscreenTitleWrap: { flex: 1, minWidth: 0, paddingRight: 12 },
+  fullscreenEyebrow: { color: "#8FD2FF", fontSize: 8, fontWeight: "900", letterSpacing: 1.2 },
+  fullscreenTitle: { color: "#FFFFFF", fontSize: 17, fontWeight: "900", marginTop: 3 },
+  fullscreenSubtitle: { color: "#C8D8E8", fontSize: 10, fontWeight: "800", marginTop: 3 },
+  fullscreenClose: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.12)" },
+  fullscreenBody: { flex: 1, width: "100%", backgroundColor: "#FFFFFF", overflow: "hidden" },
   footerNotice: { color: colors.textMuted, fontSize: 9, lineHeight: 15, textAlign: "center", paddingHorizontal: 18, marginTop: 13, marginBottom: 6 },
 });
