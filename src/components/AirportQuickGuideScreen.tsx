@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { Screen } from "@/src/components/Screen";
 import { MotionPressable } from "@/src/components/MotionPressable";
 import { NaritaMapxusMap } from "@/src/components/NaritaMapxusMap";
+import { OfficialAirportMapViewer } from "@/src/components/OfficialAirportMapViewer";
 import { useAirportJourney, type AirportFlightPlan } from "@/src/context/AirportContext";
 import {
   japanAirportGuides,
@@ -397,7 +398,7 @@ export function AirportQuickGuideScreen() {
       <View style={styles.mapCard}>
         <View style={styles.mapHeading}>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={styles.cardEyebrow}>PDF·이미지 대신 공식 웹 지도</Text>
+            <Text style={styles.cardEyebrow}>공항별 내장 지도 · 공식 자료</Text>
             <Text style={styles.cardTitle}>{guide.code} · {digitalMap.provider}</Text>
           </View>
           <View style={styles.officialBadge}>
@@ -409,7 +410,9 @@ export function AirportQuickGuideScreen() {
         {Platform.OS === "web" ? (
           <>
             {airportCode === "NRT" ? (
-              <NaritaMapxusMap />
+              <NaritaMapxusMap terminal={terminal.value} direction={direction} />
+            ) : airportCode === "CTS" ? (
+              <OfficialAirportMapViewer airportCode="CTS" terminal={terminal.value} direction={direction} />
             ) : (
               <View style={styles.kixMapFrame}>
                 {createElement("iframe", {
@@ -433,8 +436,10 @@ export function AirportQuickGuideScreen() {
             <View style={styles.mapTools}>
               <Text style={styles.mapSource}>
                 {airportCode === "NRT"
-                  ? "나리타공항이 사용하는 Mapxus 실내지도 SDK를 TripNow 화면 안에서 직접 렌더링합니다."
-                  : digitalMap.note}
+                  ? "Mapxus 인증 시 실내지도를 표시하고, 인증이 없으면 공식 발행 터미널 안내도를 내장 표시합니다."
+                  : airportCode === "CTS"
+                    ? "신치토세공항 공식 국제선 안내도를 TripNow 안에서 확대해 볼 수 있습니다."
+                    : digitalMap.note}
               </Text>
               <MotionPressable
                 onPress={() => setMapFullscreen(true)}
@@ -464,7 +469,7 @@ export function AirportQuickGuideScreen() {
         )}
 
         <Text style={styles.mapDisclaimer}>
-          지도 데이터는 TripNow가 복사한 PDF·이미지가 아니라 공항 운영사가 제공하는 웹 지도를 불러옵니다. 일부 공항은 제공 방식에 따라 시설 검색·층 전환 기능 범위가 다릅니다.
+          NRT·CTS는 공식 공항 안내도를 TripNow 내장 뷰어로 표시합니다. 실시간 지도는 아니며, 시설·게이트 변경은 공항 전광판에서 확인하세요. 다른 공항은 공식 웹 지도를 내장합니다.
         </Text>
 
         <View style={styles.officialButtons}>
@@ -536,7 +541,9 @@ export function AirportQuickGuideScreen() {
             </View>
             <View style={styles.fullscreenBody}>
               {airportCode === "NRT" ? (
-                <NaritaMapxusMap fullscreen />
+                <NaritaMapxusMap fullscreen terminal={terminal.value} direction={direction} />
+              ) : airportCode === "CTS" ? (
+                <OfficialAirportMapViewer airportCode="CTS" terminal={terminal.value} direction={direction} fullscreen />
               ) : (
                 createElement("iframe", {
                   key: `fullscreen-${airportCode}-${terminal.value}-${direction}`,
