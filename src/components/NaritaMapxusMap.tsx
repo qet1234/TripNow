@@ -2,7 +2,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { createElement, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 import { colors } from "@/src/theme";
-import { OfficialAirportMapViewer } from "@/src/components/OfficialAirportMapViewer";
+import { NaritaInternalMap } from "@/src/components/NaritaInternalMap";
 
 const NARITA_CENTER: [number, number] = [140.3929, 35.772];
 const MAPLIBRE_JS = "https://unpkg.com/maplibre-gl@5.2.0/dist/maplibre-gl.js";
@@ -187,11 +187,10 @@ export function NaritaMapxusMap({ fullscreen = false, terminal = "T1", direction
 
   if (Platform.OS !== "web" || status === "missing-credentials" || status === "error") {
     return (
-      <OfficialAirportMapViewer
-        airportCode="NRT"
+      <NaritaInternalMap
         terminal={terminal}
         direction={direction}
-        fullscreen={fullscreen}
+        compact={fullscreen}
       />
     );
   }
