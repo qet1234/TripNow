@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Linking,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen } from "@/src/components/Screen";
+import { MotionPressable } from "@/src/components/MotionPressable";
 import { useAirportJourney, type AirportFlightPlan } from "@/src/context/AirportContext";
 import {
   japanAirportGuides,
@@ -169,7 +169,7 @@ export function AirportQuickGuideScreen() {
         {airportOrder.map((code) => {
           const selected = airportCode === code;
           return (
-            <Pressable
+            <MotionPressable
               accessibilityLabel={`${airportShortNames[code]}공항 선택`}
               key={code}
               onPress={() => {
@@ -180,7 +180,7 @@ export function AirportQuickGuideScreen() {
             >
               <Text style={[styles.airportCode, selected && styles.airportCodeSelected]}>{code}</Text>
               <Text style={[styles.airportName, selected && styles.airportNameSelected]}>{airportShortNames[code]}</Text>
-            </Pressable>
+            </MotionPressable>
           );
         })}
       </ScrollView>
@@ -203,20 +203,20 @@ export function AirportQuickGuideScreen() {
       </View>
 
       <View style={styles.directionTabs}>
-        <Pressable
+        <MotionPressable
           onPress={() => selectDirection("departure")}
           style={[styles.directionTab, direction === "departure" && styles.directionTabActive]}
         >
           <MaterialCommunityIcons color={direction === "departure" ? "#FFFFFF" : colors.textMuted} name="airplane-takeoff" size={17} />
           <Text style={[styles.directionText, direction === "departure" && styles.directionTextActive]}>일본에서 출국</Text>
-        </Pressable>
-        <Pressable
+        </MotionPressable>
+        <MotionPressable
           onPress={() => selectDirection("arrival")}
           style={[styles.directionTab, direction === "arrival" && styles.directionTabActive]}
         >
           <MaterialCommunityIcons color={direction === "arrival" ? "#FFFFFF" : colors.textMuted} name="airplane-landing" size={17} />
           <Text style={[styles.directionText, direction === "arrival" && styles.directionTextActive]}>일본에 도착</Text>
-        </Pressable>
+        </MotionPressable>
       </View>
 
       <View style={styles.matchCard}>
@@ -228,10 +228,10 @@ export function AirportQuickGuideScreen() {
             <Text style={styles.cardEyebrow}>항공편 기준 자동 맞춤</Text>
             <Text style={styles.cardTitle}>편명으로 터미널 예상</Text>
           </View>
-          <Pressable onPress={() => router.push("/airport-setup")} style={styles.photoButton}>
+          <MotionPressable onPress={() => router.push("/airport-setup")} style={styles.photoButton}>
             <MaterialCommunityIcons color={colors.blue} name="camera-outline" size={17} />
             <Text style={styles.photoButtonText}>항공권 사진</Text>
-          </Pressable>
+          </MotionPressable>
         </View>
 
         <View style={styles.inputRow}>
@@ -266,10 +266,10 @@ export function AirportQuickGuideScreen() {
             />
           </View>
         </View>
-        <Pressable onPress={() => setMatched(true)} style={styles.matchButton}>
+        <MotionPressable onPress={() => setMatched(true)} style={styles.matchButton}>
           <MaterialCommunityIcons color="#FFFFFF" name="airplane-search" size={18} />
           <Text style={styles.matchButtonText}>터미널 찾기</Text>
-        </Pressable>
+        </MotionPressable>
         <Text style={styles.matchNotice}>
           {matched
             ? `${airline?.name || "항공사 확인 필요"} · ${guide.name} 기준으로 안내를 맞췄습니다.`
@@ -338,15 +338,15 @@ export function AirportQuickGuideScreen() {
         </View>
 
         <View style={styles.officialButtons}>
-          <Pressable accessibilityRole="link" onPress={() => openOfficialPage(guide.mapUrl)} style={styles.officialPrimary}>
+          <MotionPressable accessibilityRole="link" onPress={() => openOfficialPage(guide.mapUrl)} style={styles.officialPrimary}>
             <MaterialCommunityIcons color="#FFFFFF" name="map-outline" size={18} />
             <Text style={styles.officialPrimaryText}>공식 안내지도 열기</Text>
             <MaterialCommunityIcons color="#FFFFFF" name="open-in-new" size={15} />
-          </Pressable>
-          <Pressable accessibilityRole="link" onPress={() => openOfficialPage(guide.flightUrl)} style={styles.officialSecondary}>
+          </MotionPressable>
+          <MotionPressable accessibilityRole="link" onPress={() => openOfficialPage(guide.flightUrl)} style={styles.officialSecondary}>
             <MaterialCommunityIcons color={colors.blue} name="airplane-clock" size={18} />
             <Text style={styles.officialSecondaryText}>공식 운항조회</Text>
-          </Pressable>
+          </MotionPressable>
         </View>
       </View>
 
