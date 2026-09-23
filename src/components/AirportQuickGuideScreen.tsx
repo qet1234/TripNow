@@ -1,6 +1,7 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { createElement, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Linking,
   Modal,
   Platform,
@@ -25,6 +26,26 @@ import { colors, radius } from "@/src/theme";
 import { getDigitalAirportMap } from "@/src/data/digitalAirportMaps";
 
 type GuideDirection = "departure" | "arrival";
+
+type OfficialFlightRow = {
+  flight?: string;
+  destination?: string;
+  scheduled?: string;
+  estimated?: string;
+  gate?: string;
+  terminal?: string;
+  status?: string;
+  airline?: string;
+  cells?: string[];
+};
+
+type OfficialFlightResponse = {
+  flights?: OfficialFlightRow[];
+  fallback?: boolean;
+  fetchedAt?: string;
+  sourceUrl?: string;
+  error?: string;
+};
 
 const airportOrder: readonly JapanAirportCode[] = ["HND", "NRT", "KIX", "CTS", "NGO", "FUK", "OKA"];
 
@@ -105,6 +126,10 @@ export function AirportQuickGuideScreen() {
   const [matched, setMatched] = useState(false);
   const [mapFullscreen, setMapFullscreen] = useState(false);
   const [flightFullscreen, setFlightFullscreen] = useState(false);
+  const [officialFlights, setOfficialFlights] = useState<OfficialFlightRow[]>([]);
+  const [flightLoading, setFlightLoading] = useState(false);
+  const [flightError, setFlightError] = useState("");
+  const [flightFallback, setFlightFallback] = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -141,6 +166,36 @@ export function AirportQuickGuideScreen() {
     setFlightId(fields.flightId);
     setTravelDate(fields.date);
     setMatched(Boolean(fields.flightId || fields.airportCode));
+  };
+
+  const openFlightBoard = async () => {
+    if (Platform.OS !== "web") {
+      openOfficialPage(guide.flightUrl);
+      return;
+    }
+
+    setFlightFullscreen(true);
+    setFlightLoading(true);
+    setFlightError("");
+    setFlightFallback(false);
+    setOfficialFlights([]);
+
+    try {
+      const response = await fetch(
+        `/api/airport-flights?airport=${airportCode}&direction=${direction}`,
+        { cache: "no-store" },
+      );
+      const data = (await response.json()) as OfficialFlightResponse;
+      if (!response.ok) throw new Error(data.error || "공식 운항정보를 불러오지 못했습니다.");
+      const rows = Array.isArray(data.flights) ? data.flights : [];
+      setOfficialFlights(rows);
+      setFlightFallback(Boolean(data.fallback) || rows.length === 0);
+    } catch (error) {
+      setFlightError(error instanceof Error ? error.message : "공식 운항정보를 불러오지 못했습니다.");
+      setFlightFallback(true);
+    } finally {
+      setFlightLoading(false);
+    }
   };
 
   return (
@@ -385,7 +440,7 @@ export function AirportQuickGuideScreen() {
             <Text style={styles.officialPrimaryText}>내장 전체 화면</Text>
             <MaterialCommunityIcons color="#FFFFFF" name="fullscreen" size={15} />
           </MotionPressable>
-          <MotionPressable onPress={() => setFlightFullscreen(true)} style={styles.officialSecondary}>
+          <MotionPressable onPress={openFlightBoard} style={styles.officialSecondary}>
             <MaterialCommunityIcons color={colors.blue} name="airplane-clock" size={18} />
             <Text style={styles.officialSecondaryText}>공식 운항조회</Text>
           </MotionPressable>
@@ -493,20 +548,104 @@ export function AirportQuickGuideScreen() {
                 공항 운영사가 제공하는 최신 운항 페이지입니다. 출발·도착, 편명, 목적지, 시간, 터미널 및 운항 상태를 이 화면 안에서 확인하세요.
               </Text>
             </View>
-            <View style={styles.fullscreenBody}>
-              {createElement("iframe", {
-                key: `flight-${airportCode}-${direction}`,
-                src: guide.flightUrl,
-                title: `${guide.name} 공식 운항정보`,
-                allowFullScreen: true,
-                referrerPolicy: "strict-origin-when-cross-origin",
-                style: {
-                  width: "100%",
-                  height: "100%",
-                  border: 0,
-                  backgroundColor: "#FFFFFF",
-                },
-              })}
+            <View style={styles.flightBoardBody}>
+              {flightLoading ? (
+                <View style={styles.flightLoading}>
+                  <ActivityIndicator size="large" />
+                  <Text style={styles.flightLoadingTitle}>공식 운항정보 불러오는 중</Text>
+                  <Text style={styles.flightLoadingText}>공항 공식 페이지에서 오늘 운항표를 확인하고 있습니다.</Text>
+                </View>
+              ) : officialFlights.length > 0 ? (
+                <ScrollView
+                  contentContainerStyle={styles.flightList}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={styles.flightListHeader}>
+                    <View>
+                      <Text style={styles.flightListEyebrow}>OFFICIAL AIRPORT DATA</Text>
+                      <Text style={styles.flightListTitle}>
+                        {direction === "departure" ? "오늘 출발편" : "오늘 도착편"}
+                      </Text>
+                    </View>
+                    <View style={styles.flightCountBadge}>
+                      <Text style={styles.flightCountText}>{officialFlights.length}편</Text>
+                    </View>
+                  </View>
+
+                  {officialFlights.map((item, index) => (
+                    <View
+                      key={`${item.flight || "flight"}-${item.scheduled || index}-${index}`}
+                      style={styles.flightCard}
+                    >
+                      <View style={styles.flightCardTop}>
+                        <View style={styles.flightNumberWrap}>
+                          <MaterialCommunityIcons color={colors.blue} name="airplane" size={17} />
+                          <Text style={styles.flightNumber}>{item.flight || item.airline || "항공편"}</Text>
+                        </View>
+                        <View style={styles.flightTimeWrap}>
+                          <Text style={styles.flightTime}>{item.scheduled || "--:--"}</Text>
+                          {item.estimated && item.estimated !== item.scheduled ? (
+                            <Text style={styles.flightEstimated}>→ {item.estimated}</Text>
+                          ) : null}
+                        </View>
+                      </View>
+
+                      <Text style={styles.flightDestination}>
+                        {item.destination || (direction === "departure" ? "목적지 확인 중" : "출발지 확인 중")}
+                      </Text>
+
+                      <View style={styles.flightMetaRow}>
+                        {item.terminal ? <Text style={styles.flightMeta}>터미널 {item.terminal}</Text> : null}
+                        {item.gate ? <Text style={styles.flightMeta}>게이트 {item.gate}</Text> : null}
+                        {item.airline && item.airline !== item.flight ? <Text style={styles.flightMeta}>{item.airline}</Text> : null}
+                      </View>
+
+                      {item.status ? (
+                        <View style={styles.flightStatus}>
+                          <MaterialCommunityIcons color={colors.teal} name="information-outline" size={14} />
+                          <Text style={styles.flightStatusText}>{item.status}</Text>
+                        </View>
+                      ) : null}
+
+                      {!item.destination && item.cells?.length ? (
+                        <Text style={styles.flightRawText}>{item.cells.slice(0, 6).join(" · ")}</Text>
+                      ) : null}
+                    </View>
+                  ))}
+
+                  <View style={styles.flightSourceNotice}>
+                    <MaterialCommunityIcons color={colors.teal} name="shield-check-outline" size={16} />
+                    <Text style={styles.flightSourceNoticeText}>
+                      공항 운영사의 공개 운항 페이지를 서버에서 읽어 TripNow 형식으로 정리한 정보입니다. 당일 변경 사항은 공항 전광판과 항공사 안내를 함께 확인하세요.
+                    </Text>
+                  </View>
+                </ScrollView>
+              ) : (
+                <View style={styles.flightFallbackWrap}>
+                  <View style={styles.flightFallbackMessage}>
+                    <MaterialCommunityIcons color={colors.blue} name="web-sync" size={24} />
+                    <Text style={styles.flightFallbackTitle}>공식 페이지 내장 모드</Text>
+                    <Text style={styles.flightFallbackText}>
+                      {flightError || "이 공항은 운항표를 별도 데이터 형태로 추출할 수 없어 공식 운항 페이지를 TripNow 안에서 표시합니다."}
+                    </Text>
+                  </View>
+                  <View style={styles.flightFallbackFrame}>
+                    {createElement("iframe", {
+                      key: `flight-fallback-${airportCode}-${direction}`,
+                      src: guide.flightUrl,
+                      title: `${guide.name} 공식 운항정보`,
+                      allowFullScreen: true,
+                      referrerPolicy: "strict-origin-when-cross-origin",
+                      style: {
+                        width: "100%",
+                        height: "100%",
+                        border: 0,
+                        backgroundColor: "#FFFFFF",
+                      },
+                    })}
+                  </View>
+                </View>
+              )}
             </View>
           </View>
         </Modal>
@@ -625,5 +764,35 @@ const styles = StyleSheet.create({
   fullscreenBody: { flex: 1, width: "100%", backgroundColor: "#FFFFFF", overflow: "hidden" },
   flightBoardNotice: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: "#EEF6FF", borderBottomWidth: 1, borderBottomColor: "#D5E5F6" },
   flightBoardNoticeText: { flex: 1, color: colors.textMuted, fontSize: 10, lineHeight: 15, fontWeight: "700" },
+  flightBoardBody: { flex: 1, width: "100%", backgroundColor: "#F4F7FA" },
+  flightLoading: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  flightLoadingTitle: { color: colors.text, fontSize: 16, fontWeight: "900", marginTop: 14 },
+  flightLoadingText: { color: colors.textMuted, fontSize: 11, lineHeight: 17, textAlign: "center", marginTop: 6 },
+  flightList: { padding: 14, paddingBottom: 32 },
+  flightListHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  flightListEyebrow: { color: colors.blue, fontSize: 8, fontWeight: "900", letterSpacing: 1 },
+  flightListTitle: { color: colors.text, fontSize: 20, fontWeight: "900", marginTop: 3 },
+  flightCountBadge: { borderRadius: radius.pill, backgroundColor: colors.primarySoft, paddingHorizontal: 10, paddingVertical: 6 },
+  flightCountText: { color: colors.primary, fontSize: 10, fontWeight: "900" },
+  flightCard: { borderRadius: 16, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: colors.border, padding: 14, marginBottom: 9 },
+  flightCardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
+  flightNumberWrap: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1, minWidth: 0 },
+  flightNumber: { color: colors.text, fontSize: 15, fontWeight: "900" },
+  flightTimeWrap: { flexDirection: "row", alignItems: "baseline", gap: 5 },
+  flightTime: { color: colors.text, fontSize: 17, fontWeight: "900" },
+  flightEstimated: { color: colors.warning, fontSize: 10, fontWeight: "900" },
+  flightDestination: { color: colors.text, fontSize: 13, fontWeight: "800", marginTop: 9 },
+  flightMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  flightMeta: { color: colors.textMuted, fontSize: 9, fontWeight: "800", borderRadius: radius.pill, backgroundColor: "#F1F4F7", paddingHorizontal: 8, paddingVertical: 5 },
+  flightStatus: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 9, borderRadius: 10, backgroundColor: colors.tealSoft, paddingHorizontal: 9, paddingVertical: 7 },
+  flightStatusText: { color: colors.teal, fontSize: 9, lineHeight: 14, fontWeight: "900", flex: 1 },
+  flightRawText: { color: colors.textMuted, fontSize: 9, lineHeight: 14, marginTop: 8 },
+  flightSourceNotice: { flexDirection: "row", alignItems: "flex-start", gap: 7, borderRadius: 13, backgroundColor: colors.tealSoft, padding: 12, marginTop: 4 },
+  flightSourceNoticeText: { flex: 1, color: colors.textMuted, fontSize: 9, lineHeight: 15, fontWeight: "700" },
+  flightFallbackWrap: { flex: 1, backgroundColor: "#FFFFFF" },
+  flightFallbackMessage: { minHeight: 105, alignItems: "center", justifyContent: "center", paddingHorizontal: 20, paddingVertical: 14, backgroundColor: "#F3F8FF", borderBottomWidth: 1, borderBottomColor: "#D5E5F6" },
+  flightFallbackTitle: { color: colors.text, fontSize: 14, fontWeight: "900", marginTop: 7 },
+  flightFallbackText: { color: colors.textMuted, fontSize: 10, lineHeight: 15, textAlign: "center", marginTop: 5 },
+  flightFallbackFrame: { flex: 1, minHeight: 420, backgroundColor: "#FFFFFF" },
   footerNotice: { color: colors.textMuted, fontSize: 9, lineHeight: 15, textAlign: "center", paddingHorizontal: 18, marginTop: 13, marginBottom: 6 },
 });
