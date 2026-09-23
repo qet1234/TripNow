@@ -86,6 +86,25 @@ function openOfficialPage(url: string) {
   }
   void Linking.openURL(url);
 }
+function officialInternationalFlightUrl(
+  airportCode: JapanAirportCode,
+  direction: GuideDirection,
+  fallbackUrl: string,
+) {
+  if (airportCode === "NRT") {
+    return direction === "departure"
+      ? "https://www.narita-airport.jp/en/flight/dep-search/?searchDepArr=dep-search"
+      : "https://www.narita-airport.jp/en/flight/arr-search/?searchDepArr=arr-search";
+  }
+
+  if (airportCode === "CTS") {
+    const purposeType = direction === "departure" ? "departure" : "arrival";
+    return `https://www.hokkaido-airports.com/en/new-chitose/airport/fis/?airline=&airlineType=international&airport=&flightNumber=&purposeType=${purposeType}&timeFrom=&timeTo=`;
+  }
+
+  return fallbackUrl;
+}
+
 
 function subtractMinutes(value: string, minutes: number) {
   const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
@@ -170,6 +189,11 @@ export function AirportQuickGuideScreen() {
   };
 
   const openFlightBoard = async () => {
+    if (officialWebOnly) {
+      openOfficialPage(officialInternationalFlightUrl(airportCode, direction, guide.flightUrl));
+      return;
+    }
+
     if (Platform.OS !== "web") {
       openOfficialPage(guide.flightUrl);
       return;
@@ -470,7 +494,7 @@ export function AirportQuickGuideScreen() {
           </MotionPressable>
           <MotionPressable onPress={openFlightBoard} style={styles.officialSecondary}>
             <MaterialCommunityIcons color={colors.blue} name="airplane-clock" size={18} />
-            <Text style={styles.officialSecondaryText}>공식 운항조회</Text>
+            <Text style={styles.officialSecondaryText}>{officialWebOnly ? "공식 국제선 웹" : "국제선 운항조회"}</Text>
           </MotionPressable>
         </View>
       </View>
