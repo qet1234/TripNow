@@ -132,6 +132,9 @@ export function AirportQuickGuideScreen() {
   const mapSource = mapSheet ? Image.resolveAssetSource(mapSheet.image) : null;
   const imageWidth = mapZoomed ? Math.max(Math.round(mapWidth * 2.2), 760) : mapWidth;
   const imageHeight = mapSource ? Math.round(imageWidth * mapSource.height / mapSource.width) : 0;
+  const kixDigitalMapUrl = airportCode === "KIX"
+    ? `https://platinumaps.jp/maps/kix-airport?area=${/\\bT2\\b/i.test(terminal.value) ? "33" : "32"}&floor=${direction === "departure" && !/\\bT2\\b/i.test(terminal.value) ? "4F" : "1F"}`
+    : "";
 
   const route = useMemo(
     () =>
