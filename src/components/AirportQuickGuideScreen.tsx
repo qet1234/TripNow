@@ -14,6 +14,7 @@ import {
 import { useRouter } from "expo-router";
 import { Screen } from "@/src/components/Screen";
 import { MotionPressable } from "@/src/components/MotionPressable";
+import { NaritaMapxusMap } from "@/src/components/NaritaMapxusMap";
 import { useAirportJourney, type AirportFlightPlan } from "@/src/context/AirportContext";
 import {
   japanAirportGuides,
@@ -169,7 +170,7 @@ export function AirportQuickGuideScreen() {
   const flow = direction === "departure" ? guide.departureFlow : guide.arrivalFlow;
   const startTime = subtractMinutes(savedFields.time, 90);
   const digitalMap = getDigitalAirportMap(airportCode, terminal.value, direction);
-  const officialWebOnly = airportCode === "NRT";
+  const flightOfficialWebOnly = airportCode === "NRT";
 
   const route = useMemo(
     () =>
@@ -189,7 +190,7 @@ export function AirportQuickGuideScreen() {
   };
 
   const openFlightBoard = async () => {
-    if (officialWebOnly) {
+    if (flightOfficialWebOnly) {
       openOfficialPage(officialInternationalFlightUrl(airportCode, direction, guide.flightUrl));
       return;
     }
@@ -407,26 +408,8 @@ export function AirportQuickGuideScreen() {
 
         {Platform.OS === "web" ? (
           <>
-            {officialWebOnly ? (
-              <View style={styles.officialWebCard}>
-                <View style={styles.officialWebIcon}>
-                  <MaterialCommunityIcons color={colors.blue} name="web" size={30} />
-                </View>
-                <Text style={styles.officialWebTitle}>{guide.name} 공식 지도</Text>
-                <Text style={styles.officialWebText}>
-                  {airportCode === "NRT"
-                    ? "나리타공항은 외부 사이트 내장 표시를 제한하고 있어 공식 공항 웹 지도에서 확인합니다."
-                    : "신치토세공항은 공식 공항 웹의 국제선 층별 지도를 사용합니다."}
-                </Text>
-                <MotionPressable
-                  accessibilityRole="link"
-                  onPress={() => openOfficialPage(digitalMap.openUrl)}
-                  style={styles.officialWebButton}
-                >
-                  <MaterialCommunityIcons color="#FFFFFF" name="open-in-new" size={17} />
-                  <Text style={styles.officialWebButtonText}>공식 웹 지도 열기</Text>
-                </MotionPressable>
-              </View>
+            {airportCode === "NRT" ? (
+              <NaritaMapxusMap />
             ) : (
               <View style={styles.kixMapFrame}>
                 {createElement("iframe", {
@@ -449,15 +432,16 @@ export function AirportQuickGuideScreen() {
             )}
             <View style={styles.mapTools}>
               <Text style={styles.mapSource}>
-                {officialWebOnly ? "나리타공항은 웹 보안 정책상 외부 사이트에서 공식 지도 화면을 직접 프레임으로 표시할 수 없습니다." : digitalMap.note}
+                {airportCode === "NRT"
+                  ? "나리타공항이 사용하는 Mapxus 실내지도 SDK를 TripNow 화면 안에서 직접 렌더링합니다."
+                  : digitalMap.note}
               </Text>
               <MotionPressable
-                accessibilityRole="link"
-                onPress={() => officialWebOnly ? openOfficialPage(digitalMap.openUrl) : setMapFullscreen(true)}
+                onPress={() => setMapFullscreen(true)}
                 style={styles.zoomButton}
               >
-                <MaterialCommunityIcons color={colors.blue} name={officialWebOnly ? "open-in-new" : "arrow-expand-all"} size={16} />
-                <Text style={styles.zoomText}>{officialWebOnly ? "공식 웹" : "전체 화면"}</Text>
+                <MaterialCommunityIcons color={colors.blue} name="arrow-expand-all" size={16} />
+                <Text style={styles.zoomText}>전체 화면</Text>
               </MotionPressable>
             </View>
           </>
@@ -485,16 +469,16 @@ export function AirportQuickGuideScreen() {
 
         <View style={styles.officialButtons}>
           <MotionPressable
-            onPress={() => officialWebOnly ? openOfficialPage(digitalMap.openUrl) : setMapFullscreen(true)}
+            onPress={() => setMapFullscreen(true)}
             style={styles.officialPrimary}
           >
-            <MaterialCommunityIcons color="#FFFFFF" name={officialWebOnly ? "web" : "map-outline"} size={18} />
-            <Text style={styles.officialPrimaryText}>{officialWebOnly ? "공식 웹 지도" : "내장 전체 화면"}</Text>
-            <MaterialCommunityIcons color="#FFFFFF" name={officialWebOnly ? "open-in-new" : "fullscreen"} size={15} />
+            <MaterialCommunityIcons color="#FFFFFF" name="map-outline" size={18} />
+            <Text style={styles.officialPrimaryText}>내장 전체 화면</Text>
+            <MaterialCommunityIcons color="#FFFFFF" name="fullscreen" size={15} />
           </MotionPressable>
           <MotionPressable onPress={openFlightBoard} style={styles.officialSecondary}>
             <MaterialCommunityIcons color={colors.blue} name="airplane-clock" size={18} />
-            <Text style={styles.officialSecondaryText}>{officialWebOnly ? "공식 국제선 웹" : "국제선 운항조회"}</Text>
+            <Text style={styles.officialSecondaryText}>{flightOfficialWebOnly ? "공식 국제선 웹" : "국제선 운항조회"}</Text>
           </MotionPressable>
         </View>
       </View>
@@ -551,20 +535,24 @@ export function AirportQuickGuideScreen() {
               </MotionPressable>
             </View>
             <View style={styles.fullscreenBody}>
-              {createElement("iframe", {
-                key: `fullscreen-${airportCode}-${terminal.value}-${direction}`,
-                src: digitalMap.embedUrl,
-                title: `${guide.name} 전체 화면 공식 디지털 지도`,
-                allow: "geolocation; fullscreen",
-                allowFullScreen: true,
-                referrerPolicy: "strict-origin-when-cross-origin",
-                style: {
-                  width: "100%",
-                  height: "100%",
-                  border: 0,
-                  backgroundColor: "#FFFFFF",
-                },
-              })}
+              {airportCode === "NRT" ? (
+                <NaritaMapxusMap fullscreen />
+              ) : (
+                createElement("iframe", {
+                  key: `fullscreen-${airportCode}-${terminal.value}-${direction}`,
+                  src: digitalMap.embedUrl,
+                  title: `${guide.name} 전체 화면 공식 디지털 지도`,
+                  allow: "geolocation; fullscreen",
+                  allowFullScreen: true,
+                  referrerPolicy: "strict-origin-when-cross-origin",
+                  style: {
+                    width: "100%",
+                    height: "100%",
+                    border: 0,
+                    backgroundColor: "#FFFFFF",
+                  },
+                })
+              )}
             </View>
           </View>
         </Modal>
