@@ -528,10 +528,10 @@ export function AirportQuickGuideScreen() {
           <View style={styles.fullscreenMap}>
             <View style={styles.fullscreenHeader}>
               <View style={styles.fullscreenTitleWrap}>
-                <Text style={styles.fullscreenEyebrow}>TRIPNOW OFFICIAL FLIGHT BOARD</Text>
-                <Text style={styles.fullscreenTitle}>{guide.code} · 공식 운항정보</Text>
+                <Text style={styles.fullscreenEyebrow}>TRIPNOW INTERNATIONAL FLIGHT BOARD</Text>
+                <Text style={styles.fullscreenTitle}>{guide.code} · 국제선 운항정보</Text>
                 <Text style={styles.fullscreenSubtitle}>
-                  {guide.name} · {direction === "departure" ? "출발편 중심" : "도착편 중심"} · 공식 공항 데이터
+                  {guide.name} · {direction === "departure" ? "국제선 출발" : "국제선 도착"} · 공식 공항 데이터
                 </Text>
               </View>
               <MotionPressable
@@ -545,7 +545,7 @@ export function AirportQuickGuideScreen() {
             <View style={styles.flightBoardNotice}>
               <MaterialCommunityIcons color={colors.blue} name="information-outline" size={17} />
               <Text style={styles.flightBoardNoticeText}>
-                공항 운영사가 제공하는 최신 운항 페이지입니다. 출발·도착, 편명, 목적지, 시간, 터미널 및 운항 상태를 이 화면 안에서 확인하세요.
+                공항 운영사가 제공하는 국제선 운항정보만 TripNow 내부에서 표시합니다. 편명, 목적지, 시간, 터미널, 게이트 및 운항 상태를 확인하세요.
               </Text>
             </View>
             <View style={styles.flightBoardBody}>
@@ -564,7 +564,7 @@ export function AirportQuickGuideScreen() {
                     <View>
                       <Text style={styles.flightListEyebrow}>OFFICIAL AIRPORT DATA</Text>
                       <Text style={styles.flightListTitle}>
-                        {direction === "departure" ? "오늘 출발편" : "오늘 도착편"}
+                        {direction === "departure" ? "오늘 국제선 출발편" : "오늘 국제선 도착편"}
                       </Text>
                     </View>
                     <View style={styles.flightCountBadge}>
@@ -616,34 +616,23 @@ export function AirportQuickGuideScreen() {
                   <View style={styles.flightSourceNotice}>
                     <MaterialCommunityIcons color={colors.teal} name="shield-check-outline" size={16} />
                     <Text style={styles.flightSourceNoticeText}>
-                      공항 운영사의 공개 운항 페이지를 서버에서 읽어 TripNow 형식으로 정리한 정보입니다. 당일 변경 사항은 공항 전광판과 항공사 안내를 함께 확인하세요.
+                      공항 운영사의 공개 국제선 운항 페이지를 서버에서 읽어 TripNow 형식으로 정리한 정보입니다. 국내선은 제외하며, 당일 변경 사항은 공항 전광판과 항공사 안내를 함께 확인하세요.
                     </Text>
                   </View>
                 </ScrollView>
               ) : (
-                <View style={styles.flightFallbackWrap}>
-                  <View style={styles.flightFallbackMessage}>
-                    <MaterialCommunityIcons color={colors.blue} name="web-sync" size={24} />
-                    <Text style={styles.flightFallbackTitle}>공식 페이지 내장 모드</Text>
-                    <Text style={styles.flightFallbackText}>
-                      {flightError || "이 공항은 운항표를 별도 데이터 형태로 추출할 수 없어 공식 운항 페이지를 TripNow 안에서 표시합니다."}
-                    </Text>
+                <View style={styles.flightUnavailable}>
+                  <View style={styles.flightUnavailableIcon}>
+                    <MaterialCommunityIcons color={colors.blue} name="airplane-alert" size={28} />
                   </View>
-                  <View style={styles.flightFallbackFrame}>
-                    {createElement("iframe", {
-                      key: `flight-fallback-${airportCode}-${direction}`,
-                      src: guide.flightUrl,
-                      title: `${guide.name} 공식 운항정보`,
-                      allowFullScreen: true,
-                      referrerPolicy: "strict-origin-when-cross-origin",
-                      style: {
-                        width: "100%",
-                        height: "100%",
-                        border: 0,
-                        backgroundColor: "#FFFFFF",
-                      },
-                    })}
-                  </View>
+                  <Text style={styles.flightFallbackTitle}>국제선 운항정보를 불러오지 못했습니다</Text>
+                  <Text style={styles.flightFallbackText}>
+                    {flightError || "공항 공식 페이지에서 국제선 운항표를 구조화된 데이터로 확인하지 못했습니다. 외부 웹페이지는 표시하지 않습니다."}
+                  </Text>
+                  <MotionPressable onPress={openFlightBoard} style={styles.retryButton}>
+                    <MaterialCommunityIcons color="#FFFFFF" name="refresh" size={17} />
+                    <Text style={styles.retryButtonText}>다시 불러오기</Text>
+                  </MotionPressable>
                 </View>
               )}
             </View>
@@ -789,10 +778,11 @@ const styles = StyleSheet.create({
   flightRawText: { color: colors.textMuted, fontSize: 9, lineHeight: 14, marginTop: 8 },
   flightSourceNotice: { flexDirection: "row", alignItems: "flex-start", gap: 7, borderRadius: 13, backgroundColor: colors.tealSoft, padding: 12, marginTop: 4 },
   flightSourceNoticeText: { flex: 1, color: colors.textMuted, fontSize: 9, lineHeight: 15, fontWeight: "700" },
-  flightFallbackWrap: { flex: 1, backgroundColor: "#FFFFFF" },
-  flightFallbackMessage: { minHeight: 105, alignItems: "center", justifyContent: "center", paddingHorizontal: 20, paddingVertical: 14, backgroundColor: "#F3F8FF", borderBottomWidth: 1, borderBottomColor: "#D5E5F6" },
+  flightUnavailable: { flex: 1, alignItems: "center", justifyContent: "center", padding: 26, backgroundColor: "#F4F7FA" },
+  flightUnavailableIcon: { width: 58, height: 58, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: "#EAF4FF", marginBottom: 12 },
   flightFallbackTitle: { color: colors.text, fontSize: 14, fontWeight: "900", marginTop: 7 },
   flightFallbackText: { color: colors.textMuted, fontSize: 10, lineHeight: 15, textAlign: "center", marginTop: 5 },
-  flightFallbackFrame: { flex: 1, minHeight: 420, backgroundColor: "#FFFFFF" },
+  retryButton: { minHeight: 42, marginTop: 14, paddingHorizontal: 16, borderRadius: 12, backgroundColor: colors.blue, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
+  retryButtonText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900" },
   footerNotice: { color: colors.textMuted, fontSize: 9, lineHeight: 15, textAlign: "center", paddingHorizontal: 18, marginTop: 13, marginBottom: 6 },
 });
