@@ -1,31 +1,73 @@
 const AIRPORT_SOURCES = {
   NRT: {
-    departure: "https://www.narita-airport.jp/en/flight/dep-search/",
-    arrival: "https://www.narita-airport.jp/en/flight/arr-search/",
+    departure: {
+      url: "https://www.narita-airport.jp/en/flight/dep-search/?searchDepArr=dep-search",
+      strictInternational: true,
+    },
+    arrival: {
+      url: "https://www.narita-airport.jp/en/flight/arr-search/?searchDepArr=arr-search",
+      strictInternational: true,
+    },
   },
   HND: {
-    departure: "https://tokyo-haneda.com/en/flight/",
-    arrival: "https://tokyo-haneda.com/en/flight/",
+    departure: {
+      url: "https://tokyo-haneda.com/en/flight/int_search.html?result=1&type=int-departure",
+      strictInternational: true,
+    },
+    arrival: {
+      url: "https://tokyo-haneda.com/en/flight/int_search.html?result=1&type=int-arrival",
+      strictInternational: true,
+    },
   },
   KIX: {
-    departure: "https://www.kansai-airport.or.jp/en/flight/search",
-    arrival: "https://www.kansai-airport.or.jp/en/flight/search",
+    departure: {
+      url: "https://www.kansai-airport.or.jp/en/flight/search?date=today&direction=DEP&duration=all&flight_type=INT&target=all",
+      strictInternational: true,
+    },
+    arrival: {
+      url: "https://www.kansai-airport.or.jp/en/flight/search?date=today&direction=ARR&duration=all&flight_type=INT&target=all",
+      strictInternational: true,
+    },
   },
   CTS: {
-    departure: "https://www.hokkaido-airports.com/en/new-chitose/airport/",
-    arrival: "https://www.hokkaido-airports.com/en/new-chitose/airport/",
+    departure: {
+      url: "https://www.hokkaido-airports.com/en/new-chitose/airport/fis/?airline=&airlineType=international&airport=&flightNumber=&purposeType=departure&timeFrom=&timeTo=",
+      strictInternational: true,
+    },
+    arrival: {
+      url: "https://www.hokkaido-airports.com/en/new-chitose/airport/fis/?airline=&airlineType=international&airport=&flightNumber=&purposeType=arrival&timeFrom=&timeTo=",
+      strictInternational: true,
+    },
   },
   NGO: {
-    departure: "https://www.centrair.jp/en/flight/index.html",
-    arrival: "https://www.centrair.jp/en/flight/index.html",
+    departure: {
+      url: "https://www.centrair.jp/en/flight/search/",
+      strictInternational: false,
+    },
+    arrival: {
+      url: "https://www.centrair.jp/en/flight/search/",
+      strictInternational: false,
+    },
   },
   FUK: {
-    departure: "https://www.fukuoka-airport.jp/pcfs/en/flight/index.php?type=ID",
-    arrival: "https://www.fukuoka-airport.jp/pcfs/en/flight/index.php?type=IA",
+    departure: {
+      url: "https://www.fukuoka-airport.jp/pcfs/en/flight/index.php?type=ID",
+      strictInternational: true,
+    },
+    arrival: {
+      url: "https://www.fukuoka-airport.jp/pcfs/en/flight/index.php?type=IA",
+      strictInternational: true,
+    },
   },
   OKA: {
-    departure: "https://www.naha-airport.co.jp/en/flight/today/",
-    arrival: "https://www.naha-airport.co.jp/en/flight/today/",
+    departure: {
+      url: "https://www.naha-airport.co.jp/en/flight/today/",
+      strictInternational: false,
+    },
+    arrival: {
+      url: "https://www.naha-airport.co.jp/en/flight/today/",
+      strictInternational: false,
+    },
   },
 };
 
@@ -106,11 +148,20 @@ function normalizeRow(headers, cells) {
   return row;
 }
 
-function parseTables(html) {
-  const tables = [...html.matchAll(/<table\b[^>]*>([\s\S]*?)<\/table>/gi)].map((m) => m[1]);
+function parseTables(html, strictInternational) {
+  const tableMatches = [...html.matchAll(/<table\b[^>]*>([\s\S]*?)<\/table>/gi)];
   const results = [];
 
-  for (const table of tables) {
+  for (const tableMatch of tableMatches) {
+    const table = tableMatch[1];
+    if (!strictInternational) {
+      const contextStart = Math.max(0, (tableMatch.index || 0) - 3500);
+      const context = norm(stripTags(html.slice(contextStart, tableMatch.index || 0)));
+      const lastInternational = context.lastIndexOf("international");
+      const lastDomestic = context.lastIndexOf("domestic");
+      if (lastInternational < 0 || lastInternational < lastDomestic) continue;
+    }
+
     const rows = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map((m) => cellsFromRow(m[1]));
     if (!rows.length) continue;
 
@@ -146,7 +197,8 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const url = source[direction];
+  const selectedSource = source[direction];
+  const url = selectedSource.url;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
 
@@ -165,7 +217,7 @@ module.exports = async function handler(req, res) {
     }
 
     const html = await response.text();
-    const flights = parseTables(html);
+    const flights = parseTables(html, selectedSource.strictInternational);
 
     res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
     res.status(200).json({
@@ -174,6 +226,7 @@ module.exports = async function handler(req, res) {
       sourceUrl: url,
       fetchedAt: new Date().toISOString(),
       flights,
+      internationalOnly: true,
       fallback: flights.length === 0,
     });
   } catch (error) {
