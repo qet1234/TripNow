@@ -138,7 +138,6 @@ export function AirportQuickGuideScreen() {
     setFlightId(fields.flightId);
     setTravelDate(fields.date);
     setMatched(Boolean(fields.flightId || fields.airportCode));
-    setSelectedMapId(null);
   };
 
   return (
