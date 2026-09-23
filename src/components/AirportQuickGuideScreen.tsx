@@ -1,6 +1,7 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Image,
   Linking,
   Platform,
   ScrollView,
@@ -21,6 +22,7 @@ import {
   type JapanAirportCode,
 } from "@/src/data/japanAirportGuides";
 import { colors, radius } from "@/src/theme";
+import { defaultAirportMap, officialAirportMaps } from "@/src/data/officialAirportMaps";
 
 type GuideDirection = "departure" | "arrival";
 
@@ -55,8 +57,6 @@ const quickTips: Readonly<Record<JapanAirportCode, string>> = {
   FUK: "국제선 터미널은 국내선과 분리되어 있어 무료 셔틀 이동 여부를 확인하세요.",
   OKA: "국제선 구역과 국내선 구역이 연결되어 있으므로 표지판의 국제선 방향을 따라가세요.",
 };
-
-const mapNodePositions = ["9%", "36%", "63%", "86%"] as const;
 
 function openOfficialPage(url: string) {
   if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -103,6 +103,9 @@ export function AirportQuickGuideScreen() {
   const [flightId, setFlightId] = useState("");
   const [travelDate, setTravelDate] = useState("");
   const [matched, setMatched] = useState(false);
+  const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
+  const [mapZoomed, setMapZoomed] = useState(false);
+  const [mapWidth, setMapWidth] = useState(320);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -113,6 +116,7 @@ export function AirportQuickGuideScreen() {
     setFlightId(fields.flightId);
     setTravelDate(fields.date);
     setMatched(Boolean(fields.flightId || fields.airportCode));
+    setSelectedMapId(null);
   }, [hydrated, phase, plan]);
 
   const guide = japanAirportGuides[airportCode];
@@ -122,6 +126,12 @@ export function AirportQuickGuideScreen() {
   const gate = savedFields.gate.trim() ? `Gate ${savedFields.gate.trim()}` : "전광판 확인";
   const flow = direction === "departure" ? guide.departureFlow : guide.arrivalFlow;
   const startTime = subtractMinutes(savedFields.time, 90);
+  const mapSheets = officialAirportMaps[airportCode];
+  const mapSheet = mapSheets.find((sheet) => sheet.id === selectedMapId)
+    ?? defaultAirportMap(airportCode, terminal.value, direction);
+  const mapSource = mapSheet ? Image.resolveAssetSource(mapSheet.image) : null;
+  const imageWidth = mapZoomed ? Math.max(Math.round(mapWidth * 2.2), 760) : mapWidth;
+  const imageHeight = mapSource ? Math.round(imageWidth * mapSource.height / mapSource.width) : 0;
 
   const route = useMemo(
     () =>
@@ -138,6 +148,8 @@ export function AirportQuickGuideScreen() {
     setFlightId(fields.flightId);
     setTravelDate(fields.date);
     setMatched(Boolean(fields.flightId || fields.airportCode));
+    setSelectedMapId(null);
+    setMapZoomed(false);
   };
 
   return (
@@ -175,6 +187,8 @@ export function AirportQuickGuideScreen() {
               onPress={() => {
                 setAirportCode(code);
                 setMatched(false);
+                setSelectedMapId(null);
+                setMapZoomed(false);
               }}
               style={[styles.airportChip, selected && styles.airportChipSelected]}
             >
@@ -244,6 +258,7 @@ export function AirportQuickGuideScreen() {
               onChangeText={(value) => {
                 setFlightId(value.toUpperCase());
                 setMatched(false);
+                setSelectedMapId(null);
               }}
               placeholder="예: KE703"
               placeholderTextColor="#A2A7AE"
@@ -313,34 +328,66 @@ export function AirportQuickGuideScreen() {
       <View style={styles.mapCard}>
         <View style={styles.mapHeading}>
           <View>
-            <Text style={styles.cardEyebrow}>공항 운영사 공식 지도 기준</Text>
-            <Text style={styles.cardTitle}>{guide.code} {terminal.value} 동선 미리보기</Text>
+            <Text style={styles.cardEyebrow}>공항 운영사 공식 층별 지도</Text>
+            <Text style={styles.cardTitle}>{guide.code} · {mapSheet?.label ?? "공식 디지털 지도"}</Text>
           </View>
           <MaterialCommunityIcons color={colors.blue} name="map-marker-path" size={25} />
         </View>
 
-        <View style={styles.mapPreview}>
-          <View style={styles.mapRunway} />
-          <View style={[styles.mapBlock, styles.mapBlockOne]}><Text style={styles.mapBlockText}>1F</Text></View>
-          <View style={[styles.mapBlock, styles.mapBlockTwo]}><Text style={styles.mapBlockText}>2F</Text></View>
-          <View style={[styles.mapBlock, styles.mapBlockThree]}><Text style={styles.mapBlockText}>3F</Text></View>
-          <View style={styles.mapPath} />
-          {flow.slice(0, 4).map((step, index) => (
-            <View key={step} style={[styles.mapNode, { left: mapNodePositions[index] ?? "9%" }]}>
-              <View style={[styles.mapNodeDot, index === 3 && styles.mapNodeDotLast]} />
-              <Text numberOfLines={2} style={styles.mapNodeText}>{step}</Text>
+        {mapSheets.length > 1 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mapTabs}>
+            {mapSheets.map((sheet) => (
+              <MotionPressable
+                accessibilityLabel={`${sheet.label} 지도 보기`}
+                accessibilityState={{ selected: sheet.id === mapSheet?.id }}
+                key={sheet.id}
+                onPress={() => { setSelectedMapId(sheet.id); setMapZoomed(false); }}
+                style={[styles.mapTab, sheet.id === mapSheet?.id && styles.mapTabSelected]}
+              >
+                <Text style={[styles.mapTabText, sheet.id === mapSheet?.id && styles.mapTabTextSelected]}>{sheet.label}</Text>
+              </MotionPressable>
+            ))}
+          </ScrollView>
+        ) : null}
+
+        {mapSheet && mapSource ? (
+          <>
+            <View
+              onLayout={(event) => setMapWidth(Math.round(event.nativeEvent.layout.width))}
+              style={[styles.mapViewport, { height: Math.min(430, Math.max(210, imageHeight)) }]}
+            >
+              <ScrollView horizontal key={`${mapSheet.id}-${mapZoomed}`} nestedScrollEnabled showsHorizontalScrollIndicator={mapZoomed}>
+                <ScrollView nestedScrollEnabled showsVerticalScrollIndicator style={{ width: imageWidth }}>
+                  <Image
+                    accessibilityLabel={`${guide.name} ${mapSheet.label} 공식 지도`}
+                    resizeMode="contain"
+                    source={mapSheet.image}
+                    style={{ width: imageWidth, height: imageHeight }}
+                  />
+                </ScrollView>
+              </ScrollView>
             </View>
-          ))}
-          <View style={styles.mapGateBadge}>
-            <MaterialCommunityIcons color="#FFFFFF" name="airplane" size={14} />
-            <Text style={styles.mapGateText}>{gate}</Text>
+            <View style={styles.mapTools}>
+              <Text style={styles.mapSource}>{mapSheet.sourceNote}</Text>
+              <MotionPressable accessibilityLabel={mapZoomed ? "지도 축소" : "지도 확대"} onPress={() => setMapZoomed((value) => !value)} style={styles.zoomButton}>
+                <MaterialCommunityIcons color={colors.blue} name={mapZoomed ? "magnify-minus-outline" : "magnify-plus-outline"} size={17} />
+                <Text style={styles.zoomText}>{mapZoomed ? "축소" : "확대"}</Text>
+              </MotionPressable>
+            </View>
+            <Text style={styles.mapDisclaimer}>지도에서 좌우·위아래로 이동할 수 있습니다. 시설과 동선은 변경될 수 있으니 아래 최신 지도를 확인하세요.</Text>
+          </>
+        ) : (
+          <View style={styles.mapUnavailable}>
+            <MaterialCommunityIcons color={colors.blue} name="map-search-outline" size={30} />
+            <Text style={styles.mapUnavailableTitle}>간사이공항 최신 디지털 지도</Text>
+            <Text style={styles.mapUnavailableText}>운영사가 인쇄용 지도를 중단했습니다. 터미널별 최신 층별 지도는 공식 페이지에서 확인할 수 있습니다.</Text>
           </View>
-        </View>
+        )}
 
         <View style={styles.officialButtons}>
-          <MotionPressable accessibilityRole="link" onPress={() => openOfficialPage(guide.mapUrl)} style={styles.officialPrimary}>
+          <MotionPressable accessibilityRole="link" onPress={() => openOfficialPage(mapSheet?.sourceUrl ?? guide.mapUrl)} style={styles.officialPrimary}>
             <MaterialCommunityIcons color="#FFFFFF" name="map-outline" size={18} />
-            <Text style={styles.officialPrimaryText}>공식 안내지도 열기</Text>
+            <Text style={styles.officialPrimaryText}>최신 공식 지도 열기</Text>
             <MaterialCommunityIcons color="#FFFFFF" name="open-in-new" size={15} />
           </MotionPressable>
           <MotionPressable accessibilityRole="link" onPress={() => openOfficialPage(guide.flightUrl)} style={styles.officialSecondary}>
@@ -380,7 +427,7 @@ export function AirportQuickGuideScreen() {
       </View>
 
       <Text style={styles.footerNotice}>
-        ODPT·FlightAware 없이 공항 운영사 공식 지도와 공식 운항조회 페이지를 연결합니다. 터미널·탑승구는 공동운항 및 당일 변경이 있을 수 있으므로 전광판에서 최종 확인해 주세요.
+        화면 속 지도는 공항 운영사가 게시한 자료입니다. 터미널·탑승구와 시설 위치는 당일 변경될 수 있으므로 공식 최신 지도와 전광판에서 최종 확인해 주세요.
       </Text>
     </Screen>
   );
@@ -446,20 +493,20 @@ const styles = StyleSheet.create({
   metricSource: { color: colors.teal, fontSize: 7, lineHeight: 11, fontWeight: "800", textAlign: "center", marginTop: 2 },
   mapCard: { borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, padding: 15, marginTop: 12 },
   mapHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  mapPreview: { height: 188, borderRadius: 16, backgroundColor: "#EAF1F7", overflow: "hidden", position: "relative" },
-  mapRunway: { position: "absolute", right: -30, top: 24, width: 180, height: 34, borderRadius: 17, backgroundColor: "#CAD7E2", transform: [{ rotate: "-15deg" }] },
-  mapBlock: { position: "absolute", borderRadius: 12, borderWidth: 2, borderColor: "#A8BDD0", backgroundColor: "#DCE7EF", alignItems: "center", justifyContent: "center" },
-  mapBlockOne: { width: 92, height: 54, left: 18, top: 20 },
-  mapBlockTwo: { width: 110, height: 58, right: 18, top: 72 },
-  mapBlockThree: { width: 80, height: 48, left: 105, bottom: 18 },
-  mapBlockText: { color: "#7890A5", fontSize: 11, fontWeight: "900" },
-  mapPath: { position: "absolute", left: "10%", right: "10%", bottom: 52, height: 4, borderRadius: 2, backgroundColor: colors.blue },
-  mapNode: { position: "absolute", bottom: 28, width: 64, alignItems: "center", marginLeft: -23 },
-  mapNodeDot: { width: 13, height: 13, borderRadius: 7, borderWidth: 3, borderColor: colors.blue, backgroundColor: "#FFFFFF", marginBottom: 5 },
-  mapNodeDotLast: { backgroundColor: colors.primary, borderColor: colors.primary },
-  mapNodeText: { color: "#425466", fontSize: 7, lineHeight: 10, fontWeight: "900", textAlign: "center" },
-  mapGateBadge: { position: "absolute", right: 13, top: 13, borderRadius: radius.pill, backgroundColor: colors.primary, flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 9, paddingVertical: 6 },
-  mapGateText: { color: "#FFFFFF", fontSize: 9, fontWeight: "900" },
+  mapTabs: { gap: 7, paddingBottom: 11 },
+  mapTab: { minHeight: 34, paddingHorizontal: 12, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, justifyContent: "center", backgroundColor: "#F8FAFC" },
+  mapTabSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  mapTabText: { color: colors.textMuted, fontSize: 10, fontWeight: "800" },
+  mapTabTextSelected: { color: "#FFFFFF" },
+  mapViewport: { borderRadius: 15, borderWidth: 1, borderColor: colors.border, backgroundColor: "#FFFFFF", overflow: "hidden" },
+  mapTools: { minHeight: 39, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 8 },
+  mapSource: { color: colors.textMuted, fontSize: 9, lineHeight: 14, flex: 1 },
+  zoomButton: { minHeight: 34, flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 10, paddingHorizontal: 10, borderWidth: 1, borderColor: "#C7DCF5", backgroundColor: "#F7FBFF" },
+  zoomText: { color: colors.blue, fontSize: 10, fontWeight: "900" },
+  mapDisclaimer: { color: colors.textMuted, fontSize: 9, lineHeight: 15, marginTop: 2 },
+  mapUnavailable: { minHeight: 186, borderRadius: 15, borderWidth: 1, borderColor: "#C7DCF5", backgroundColor: "#F3F8FF", alignItems: "center", justifyContent: "center", padding: 20 },
+  mapUnavailableTitle: { color: colors.text, fontSize: 14, fontWeight: "900", marginTop: 10 },
+  mapUnavailableText: { color: colors.textMuted, fontSize: 11, lineHeight: 18, textAlign: "center", marginTop: 8 },
   officialButtons: { flexDirection: "row", gap: 8, marginTop: 12 },
   officialPrimary: { flex: 1.15, minHeight: 44, borderRadius: 12, backgroundColor: colors.blue, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   officialPrimaryText: { color: "#FFFFFF", fontSize: 10, fontWeight: "900" },
