@@ -104,6 +104,7 @@ export function AirportQuickGuideScreen() {
   const [travelDate, setTravelDate] = useState("");
   const [matched, setMatched] = useState(false);
   const [mapFullscreen, setMapFullscreen] = useState(false);
+  const [flightFullscreen, setFlightFullscreen] = useState(false);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -384,7 +385,7 @@ export function AirportQuickGuideScreen() {
             <Text style={styles.officialPrimaryText}>내장 전체 화면</Text>
             <MaterialCommunityIcons color="#FFFFFF" name="fullscreen" size={15} />
           </MotionPressable>
-          <MotionPressable accessibilityRole="link" onPress={() => openOfficialPage(guide.flightUrl)} style={styles.officialSecondary}>
+          <MotionPressable onPress={() => setFlightFullscreen(true)} style={styles.officialSecondary}>
             <MaterialCommunityIcons color={colors.blue} name="airplane-clock" size={18} />
             <Text style={styles.officialSecondaryText}>공식 운항조회</Text>
           </MotionPressable>
@@ -448,6 +449,55 @@ export function AirportQuickGuideScreen() {
                 src: digitalMap.embedUrl,
                 title: `${guide.name} 전체 화면 공식 디지털 지도`,
                 allow: "geolocation; fullscreen",
+                allowFullScreen: true,
+                referrerPolicy: "strict-origin-when-cross-origin",
+                style: {
+                  width: "100%",
+                  height: "100%",
+                  border: 0,
+                  backgroundColor: "#FFFFFF",
+                },
+              })}
+            </View>
+          </View>
+        </Modal>
+      ) : null}
+
+      {Platform.OS === "web" ? (
+        <Modal
+          animationType="fade"
+          onRequestClose={() => setFlightFullscreen(false)}
+          presentationStyle="fullScreen"
+          visible={flightFullscreen}
+        >
+          <View style={styles.fullscreenMap}>
+            <View style={styles.fullscreenHeader}>
+              <View style={styles.fullscreenTitleWrap}>
+                <Text style={styles.fullscreenEyebrow}>TRIPNOW OFFICIAL FLIGHT BOARD</Text>
+                <Text style={styles.fullscreenTitle}>{guide.code} · 공식 운항정보</Text>
+                <Text style={styles.fullscreenSubtitle}>
+                  {guide.name} · {direction === "departure" ? "출발편 중심" : "도착편 중심"} · 공식 공항 데이터
+                </Text>
+              </View>
+              <MotionPressable
+                accessibilityLabel="운항정보 닫기"
+                onPress={() => setFlightFullscreen(false)}
+                style={styles.fullscreenClose}
+              >
+                <MaterialCommunityIcons color="#FFFFFF" name="close" size={24} />
+              </MotionPressable>
+            </View>
+            <View style={styles.flightBoardNotice}>
+              <MaterialCommunityIcons color={colors.blue} name="information-outline" size={17} />
+              <Text style={styles.flightBoardNoticeText}>
+                공항 운영사가 제공하는 최신 운항 페이지입니다. 출발·도착, 편명, 목적지, 시간, 터미널 및 운항 상태를 이 화면 안에서 확인하세요.
+              </Text>
+            </View>
+            <View style={styles.fullscreenBody}>
+              {createElement("iframe", {
+                key: `flight-${airportCode}-${direction}`,
+                src: guide.flightUrl,
+                title: `${guide.name} 공식 운항정보`,
                 allowFullScreen: true,
                 referrerPolicy: "strict-origin-when-cross-origin",
                 style: {
@@ -573,5 +623,7 @@ const styles = StyleSheet.create({
   fullscreenSubtitle: { color: "#C8D8E8", fontSize: 10, fontWeight: "800", marginTop: 3 },
   fullscreenClose: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.12)" },
   fullscreenBody: { flex: 1, width: "100%", backgroundColor: "#FFFFFF", overflow: "hidden" },
+  flightBoardNotice: { minHeight: 48, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: "#EEF6FF", borderBottomWidth: 1, borderBottomColor: "#D5E5F6" },
+  flightBoardNoticeText: { flex: 1, color: colors.textMuted, fontSize: 10, lineHeight: 15, fontWeight: "700" },
   footerNotice: { color: colors.textMuted, fontSize: 9, lineHeight: 15, textAlign: "center", paddingHorizontal: 18, marginTop: 13, marginBottom: 6 },
 });
