@@ -2,6 +2,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { createElement, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 import { colors } from "@/src/theme";
+import { OfficialAirportMapViewer } from "@/src/components/OfficialAirportMapViewer";
 
 const NARITA_CENTER: [number, number] = [140.3929, 35.772];
 const MAPLIBRE_JS = "https://unpkg.com/maplibre-gl@5.2.0/dist/maplibre-gl.js";
@@ -82,7 +83,7 @@ function buildingNameOf(item: any) {
   return names.filter(Boolean).join(" ");
 }
 
-export function NaritaMapxusMap({ fullscreen = false }: { fullscreen?: boolean }) {
+export function NaritaMapxusMap({ fullscreen = false, terminal = "T1", direction = "departure" }: { fullscreen?: boolean; terminal?: string; direction?: "departure" | "arrival" }) {
   const containerRef = useRef<any>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
@@ -184,26 +185,14 @@ export function NaritaMapxusMap({ fullscreen = false }: { fullscreen?: boolean }
     };
   }, []);
 
-  if (Platform.OS !== "web") {
+  if (Platform.OS !== "web" || status === "missing-credentials" || status === "error") {
     return (
-      <View style={[styles.notice, fullscreen && styles.fullscreenNotice]}>
-        <MaterialCommunityIcons color={colors.blue} name="map-marker-radius-outline" size={28} />
-        <Text style={styles.title}>나리타 공식 실내지도</Text>
-        <Text style={styles.text}>웹 버전에서 Mapxus 공식 실내지도를 TripNow 안에 표시합니다.</Text>
-      </View>
-    );
-  }
-
-  if (status === "missing-credentials") {
-    return (
-      <View style={[styles.notice, fullscreen && styles.fullscreenNotice]}>
-        <View style={styles.icon}>
-          <MaterialCommunityIcons color={colors.blue} name="key-outline" size={27} />
-        </View>
-        <Text style={styles.title}>나리타 공식 지도 내장 준비됨</Text>
-        <Text style={styles.text}>{message}</Text>
-        <Text style={styles.code}>EXPO_PUBLIC_MAPXUS_APP_ID · EXPO_PUBLIC_MAPXUS_SECRET</Text>
-      </View>
+      <OfficialAirportMapViewer
+        airportCode="NRT"
+        terminal={terminal}
+        direction={direction}
+        fullscreen={fullscreen}
+      />
     );
   }
 
