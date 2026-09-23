@@ -169,7 +169,7 @@ export function AirportQuickGuideScreen() {
   const flow = direction === "departure" ? guide.departureFlow : guide.arrivalFlow;
   const startTime = subtractMinutes(savedFields.time, 90);
   const digitalMap = getDigitalAirportMap(airportCode, terminal.value, direction);
-  const officialWebOnly = airportCode === "NRT" || airportCode === "CTS";
+  const officialWebOnly = airportCode === "NRT";
 
   const route = useMemo(
     () =>
@@ -449,7 +449,7 @@ export function AirportQuickGuideScreen() {
             )}
             <View style={styles.mapTools}>
               <Text style={styles.mapSource}>
-                {officialWebOnly ? "NRT·CTS는 공식 공항 웹 지도에서 확인합니다." : digitalMap.note}
+                {officialWebOnly ? "나리타공항은 웹 보안 정책상 외부 사이트에서 공식 지도 화면을 직접 프레임으로 표시할 수 없습니다." : digitalMap.note}
               </Text>
               <MotionPressable
                 accessibilityRole="link"
